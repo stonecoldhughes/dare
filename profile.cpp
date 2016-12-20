@@ -8,9 +8,9 @@ map<string, map<ompt_task_id_t, struct kernel_node*> > Profile::kernel_data;
 mutex Profile::kernel_mut;
 
 atomic<unsigned long> Profile::cblas_dgemm_count;
-atomic<unsigned long> Profile::lapacke_dpotrf_count;
+atomic<unsigned long> Profile::core_dpotrf_count;
 atomic<unsigned long> Profile::cblas_dsyrk_count;
-atomic<unsigned long> Profile::cblas_dtrsm_count;
+atomic<unsigned long> Profile::core_dtrsm_count;
 
 /* Declare static class variables  */
 ompt_get_thread_id_t Profile::get_thread_id_ptr;
@@ -43,27 +43,20 @@ void Profile::setup()
     cblas_dsyrk_hook = (cblas_dsyrk_hook_type)dlsym(plasma_file, "cblas_dsyrk");
     if(cblas_dsyrk_hook == NULL) {printf("cblas_dsyrk() hook NULL\n"); exit(0);}
     
-    /* hook cblas_dtrsm() */
-    cblas_dtrsm_hook = (cblas_dtrsm_hook_type)dlsym(plasma_file, "cblas_dtrsm");
-    if(cblas_dtrsm_hook == NULL) {printf("cblas_dtrsm() hook NULL\n"); exit(0);}
+    /* hook core_dtrsm() */
+    core_dtrsm_hook = (core_dtrsm_hook_type)dlsym(plasma_file, "core_dtrsm");
+    if(core_dtrsm_hook == NULL) {printf("core_dtrsm() hook NULL\n"); exit(0);}
 
-    /* hook lapacke_dpotrf() */
-    lapacke_dpotrf_hook = (lapacke_dpotrf_hook_type)dlsym(plasma_file, "LAPACKE_dpotrf");
-    if(lapacke_dpotrf_hook == NULL) {printf("lapacke_dpotrf() hook NULL\n"); exit(0);}
+    /* hook core_dpotrf() */
+    core_dpotrf_hook = (core_dpotrf_hook_type)dlsym(plasma_file, "core_dpotrf");
+    if(core_dpotrf_hook == NULL) {printf("core_dpotrf() hook NULL\n"); exit(0);}
 
     /*set atomic counters*/
     cblas_dgemm_count = 0;
     cblas_dsyrk_count = 0;
-    cblas_dtrsm_count = 0;
-    lapacke_dpotrf_count = 0;
+    core_dtrsm_count = 0;
+    core_dpotrf_count = 0;
     
-    /* set up the tuner */
-    tune.set_library(plasma_file);
-
-    tune.set_tile_sizes("file.txt");
-
-    tune.run();
-
     return;
 }
 
@@ -228,55 +221,50 @@ void Profile::call_cblas_dsyrk(
     return;
 }
 
-void Profile::call_cblas_dtrsm(
-                              const  CBLAS_LAYOUT Layout,
-                              const  CBLAS_SIDE Side,
-                              const  CBLAS_UPLO Uplo,
-                              const  CBLAS_TRANSPOSE TransA,
-                              const  CBLAS_DIAG Diag,
-                              const MKL_INT M,
-                              const MKL_INT N,
-                              const double alpha,
-                              const double *A,
-                              const MKL_INT lda,
-                              double *B, 
-                              const MKL_INT ldb
-                              )
+void Profile::call_core_dtrsm(
+                             plasma_enum_t side,
+                             plasma_enum_t uplo,
+                             plasma_enum_t transA,
+                             plasma_enum_t diag,
+                             int m,
+                             int n,
+                             double alpha,
+                             const double *A,
+                             int lda,
+                             double *B,
+                             int ldb
+                             )
 {
-    (*cblas_dtrsm_hook)(
-                       Layout,
-                       Side,
-                       Uplo,
-                       TransA,
-                       Diag,
-                       M,
-                       N,
-                       alpha,
-                       A,
-                       lda,
-                       B, 
-                       ldb
-                       );
-
+    (*core_dtrsm_hook)(
+                      side,
+                      uplo,
+                      transA,
+                      diag,
+                      m,
+                      n,
+                      alpha,
+                      A,
+                      lda,
+                      B,
+                      ldb
+                      );
     return;
 }
 
 
-void Profile::call_lapacke_dpotrf(
-                                 int matrix_layout,
-                                 char uplo,
-                                 lapack_int n,
-                                 double *a,
-                                 lapack_int lda
-                                 )
+void Profile::call_core_dpotrf(
+                              plasma_enum_t uplo,
+                              int n,
+                              double *A,
+                              int lda
+                              )
 {
-    (*lapacke_dpotrf_hook)(
-                          matrix_layout,
-                          uplo,
-                          n,
-                          a,
-                          lda
-                          );
+    (*core_dpotrf_hook)(
+                       uplo,
+                       n,
+                       A,
+                       lda
+                       );
 
     return;
 }

@@ -29,28 +29,26 @@ typedef void (*cblas_dgemm_hook_type)(
                                      const MKL_INT
                                      );
 
-typedef void (*lapacke_dpotrf_hook_type)(
-                                        int matrix_layout,
-                                        char uplo,
-                                        lapack_int n,
-                                        double* a,
-                                        lapack_int lda
-                                        );
-
-typedef void (*cblas_dtrsm_hook_type)(
-                                     const  CBLAS_LAYOUT,
-                                     const  CBLAS_SIDE,
-                                     const  CBLAS_UPLO,
-                                     const  CBLAS_TRANSPOSE,
-                                     const  CBLAS_DIAG,
-                                     const MKL_INT,
-                                     const MKL_INT,
-                                     const double,
-                                     const double *,
-                                     const MKL_INT,
-                                     double *, 
-                                     const MKL_INT
+typedef void (*core_dpotrf_hook_type)(
+                                     plasma_enum_t uplo,
+                                     int n,
+                                     double *A,
+                                     int lda
                                      );
+
+typedef void (*core_dtrsm_hook_type)(
+                                    plasma_enum_t side,
+                                    plasma_enum_t uplo,
+                                    plasma_enum_t transA,
+                                    plasma_enum_t diag,
+                                    int m,
+                                    int n,
+                                    double alpha,
+                                    const double *A,
+                                    int lda,
+                                    double *B,
+                                    int ldb
+                                    );
 
 typedef void (*cblas_dsyrk_hook_type)(
                                      const  CBLAS_LAYOUT,

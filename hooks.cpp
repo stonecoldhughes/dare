@@ -100,67 +100,83 @@ extern "C" void cblas_dsyrk(
     return;
 }
 
-
-extern "C" void cblas_dtrsm(
-                           const  CBLAS_LAYOUT Layout,
-                           const  CBLAS_SIDE Side,
-                           const  CBLAS_UPLO Uplo,
-                           const  CBLAS_TRANSPOSE TransA,
-                           const  CBLAS_DIAG Diag,
-                           const MKL_INT M,
-                           const MKL_INT N,
-                           const double alpha,
-                           const double *A,
-                           const MKL_INT lda,
-                           double *B,
-                           const MKL_INT ldb
-                           )
+/* Captain! Test code */
+void cblas_dtrsm (const CBLAS_LAYOUT Layout, const CBLAS_SIDE side, const CBLAS_UPLO
+uplo, const CBLAS_TRANSPOSE transa, const CBLAS_DIAG diag, const MKL_INT m, const
+MKL_INT n, const double alpha, const double *a, const MKL_INT lda, double *b, const
+MKL_INT ldb)
 {
-    int count = profile.cblas_dtrsm_count++;
-
-    ompt_control((unsigned long)CBLAS_DTRSM, count);
-
-    profile.call_cblas_dtrsm(
-                            Layout,
-                            Side,
-                            Uplo,
-                            TransA,
-                            Diag,
-                            M,
-                            N,
-                            alpha,
-                            A,
-                            lda,
-                            B, 
-                            ldb
-                            );
-
-    ompt_control((unsigned long)CBLAS_DTRSM, count);
-
+    //printf("Ahoy! cblas_dtrsm() hooked!\n");
     return;
 }
 
-extern "C" lapack_int LAPACKE_dpotrf(
-                                    int matrix_layout,
-                                    char uplo,
-                                    lapack_int n,
-                                    double* a,
-                                    lapack_int lda
-                                    )
+extern "C" void core_dtrsm(plasma_enum_t side, plasma_enum_t uplo,
+ plasma_enum_t transA, plasma_enum_t diag,
+ int m, int n,
+ double alpha, const double *A, int lda,
+ double *B, int ldb)
 {
-    int count = profile.lapacke_dpotrf_count++;
+    printf("Ahoy! core_dtrsm() hooked\n");
+    return;
+}
+/*
+extern "C" void core_dtrsm(
+                          plasma_enum_t side,
+                          plasma_enum_t uplo,
+                          plasma_enum_t transA,
+                          plasma_enum_t diag,
+                          int m,
+                          int n,
+                          double alpha,
+                          const double *A,
+                          int lda,
+                          double *B,
+                          int ldb
+                          )
+{
+    int count = profile.core_dtrsm_count++;
 
-    ompt_control((unsigned long)LAPACKE_DPOTRF, count);
+    ompt_control((unsigned long)CORE_DTRSM, count);
+    
+    profile.call_core_dtrsm(
+                           side,
+                           uplo,
+                           transA,
+                           diag,
+                           m,
+                           n,
+                           alpha,
+                           A,
+                           lda,
+                           B,
+                           ldb
+                           );
 
-    profile.call_lapacke_dpotrf(
-                               matrix_layout,
-                               uplo,
-                               n,
-                               a,
-                               lda
-                               );
+    ompt_control((unsigned long)CORE_DTRSM, count);
 
-    ompt_control((unsigned long)LAPACKE_DPOTRF, count);
+    return;
+}
+*/
+extern "C" int core_dpotrf(
+                          plasma_enum_t uplo,
+                          int n,
+                          double *A,
+                          int lda
+                          )
+{
+    printf("Hello, World!\n");
+    int count = profile.core_dpotrf_count++;
+
+    ompt_control((unsigned long)CORE_DPOTRF, count);
+
+    profile.call_core_dpotrf(
+                            uplo,
+                            n,
+                            A,
+                            lda
+                            );
+
+    ompt_control((unsigned long)CORE_DPOTRF, count);
 
     return 0;
 }

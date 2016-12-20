@@ -8,7 +8,6 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "profile_types.h"
-#include "predict.h"
 
 using namespace std;
 
@@ -16,17 +15,27 @@ extern bool append;
 
 extern class Profile profile;
 
-extern const string kernel_table[];
+//extern const string kernel_table[];
 
 typedef enum functions_enum
 {
     CBLAS_DGEMM = 0,
     CBLAS_DSYRK = 1,
-    CBLAS_DTRSM = 2,
-    LAPACKE_DPOTRF = 3,
+    CORE_DTRSM = 2,
+    CORE_DPOTRF = 3,
     
     TABLE_SIZE
 } functions_enum;
+
+/*Enumerated types*/
+const string kernel_table[] =
+{
+    "cblas_dgemm",
+    "cblas_dsyrk",
+    "core_dtrsm",
+    "core_dpotrf"
+};
+
 
 /*Data structures*/
 struct kernel_node
@@ -49,6 +58,8 @@ class Profile
         ompt_parallel_id_t get_parallel_id(int ancestor_level = 0);
         void call_plasma_init();
         void call_plasma_finalize();
+        /* core functions to hook */
+
         void call_cblas_dgemm(
                              const  CBLAS_LAYOUT Layout,
                              const  CBLAS_TRANSPOSE TransA,
@@ -80,45 +91,33 @@ class Profile
                              const MKL_INT ldc
                              );
 
-        void call_cblas_dtrsm(
-                              const  CBLAS_LAYOUT Layout,
-                              const  CBLAS_SIDE Side,
-                              const  CBLAS_UPLO Uplo,
-                              const  CBLAS_TRANSPOSE TransA,
-                              const  CBLAS_DIAG Diag,
-                              const MKL_INT M,
-                              const MKL_INT N,
-                              const double alpha,
-                              const double *A,
-                              const MKL_INT lda,
-                              double *B, 
-                              const MKL_INT ldb
-                              );
+        void call_core_dtrsm(
+                            plasma_enum_t side,
+                            plasma_enum_t uplo,
+                            plasma_enum_t transA,
+                            plasma_enum_t diag,
+                            int m,
+                            int n,
+                            double alpha,
+                            const double *A,
+                            int lda,
+                            double *B,
+                            int ldb
+                            );
 
-        void call_core_omp_dpotrf(
-                                 plasma_enum_t uplo,
-                                 int n,
-                                 double *A,
-                                 int lda,
-                                 plasma_sequence_t *sequence,
-                                 plasma_request_t *request,
-                                 int iinfo
-                                 );
-
-        void call_lapacke_dpotrf(
-                                int matrix_layout,
-                                char uplo,
-                                lapack_int n,
-                                double *a,
-                                lapack_int lda
-                                );
+        void call_core_dpotrf(
+                             plasma_enum_t uplo,
+                             int n,
+                             double *A,
+                             int lda
+                             );
 
         static void ompt_initialize(ompt_function_lookup_t, const char*, unsigned int);
         
         static atomic<unsigned long> cblas_dgemm_count;
-        static atomic<unsigned long> lapacke_dpotrf_count;
+        static atomic<unsigned long> core_dpotrf_count;
         static atomic<unsigned long> cblas_dsyrk_count;
-        static atomic<unsigned long> cblas_dtrsm_count;
+        static atomic<unsigned long> core_dtrsm_count;
 
     /* functions  */
     protected:
@@ -129,8 +128,6 @@ class Profile
 
     /* variables  */
     protected:    
-
-        class tune tune;
 
         static map<string, map<ompt_task_id_t, struct kernel_node*> > kernel_data;
         static mutex kernel_mut;
@@ -144,6 +141,6 @@ class Profile
         plasma_finalize_hook_type plasma_finalize_hook;
         cblas_dgemm_hook_type cblas_dgemm_hook;
         cblas_dsyrk_hook_type cblas_dsyrk_hook;
-        cblas_dtrsm_hook_type cblas_dtrsm_hook;
-        lapacke_dpotrf_hook_type lapacke_dpotrf_hook;
+        core_dtrsm_hook_type core_dtrsm_hook;
+        core_dpotrf_hook_type core_dpotrf_hook;
 };
