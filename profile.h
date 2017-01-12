@@ -8,7 +8,6 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "profile_types.h"
-#include "predict.h"
 
 using namespace std;
 
@@ -129,8 +128,6 @@ class Profile
 
     /* variables  */
     protected:    
-
-        class tune tune;
 
         static map<string, map<ompt_task_id_t, struct kernel_node*> > kernel_data;
         static mutex kernel_mut;

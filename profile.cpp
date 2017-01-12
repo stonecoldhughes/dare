@@ -57,13 +57,6 @@ void Profile::setup()
     cblas_dtrsm_count = 0;
     lapacke_dpotrf_count = 0;
     
-    /* set up the tuner */
-    tune.set_library(plasma_file);
-
-    tune.set_tile_sizes("file.txt");
-
-    tune.run();
-
     return;
 }
 
@@ -132,7 +125,7 @@ void Profile::kernel_to_file()
         append = false;
     }
 
-    fprintf(file, "kernel t_start task_id thread_id\n");
+    fprintf(file, "kernel t_start t_end kernel_identifier thread_id\n");
 
     for(iter1 = kernel_data.begin(); iter1 != kernel_data.end(); iter1++)
     {
