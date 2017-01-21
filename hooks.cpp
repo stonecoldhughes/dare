@@ -22,45 +22,45 @@ extern "C" int plasma_finalize()
     return 0;
 }
 
-extern "C" void cblas_dgemm(
-                           const  CBLAS_LAYOUT Layout,
-                           const  CBLAS_TRANSPOSE TransA,
-                           const  CBLAS_TRANSPOSE TransB,
-                           const MKL_INT M,
-                           const MKL_INT N,
-                           const MKL_INT K,
-                           const double alpha,
-                           const double *A,
-                           const MKL_INT lda,
-                           const double *B,
-                           const MKL_INT ldb,
-                           const double beta,
-                           double *C,
-                           const MKL_INT ldc
-                           )
+extern "C" void core_dgemm(
+                          plasma_enum_t transA,
+                          plasma_enum_t transB,
+                          int m,
+                          int n,
+                          int k,
+                          double alpha,
+                          const double *A,
+                          int lda,
+                          const double *B,
+                          int ldb,
+                          double beta,
+                          double *C,
+                          int ldc
+                          )
 {
-    int count = profile.cblas_dgemm_count++;
+    int count = profile.core_dgemm_count++;
 
-    ompt_control((unsigned long)CBLAS_DGEMM, count);
+    ompt_control((unsigned long)CORE_DGEMM, count);
 
-    profile.call_cblas_dgemm(
-                            Layout,
-                            TransA,
-                            TransB,
-                            M,
-                            N,
-                            K,
-                            alpha,
-                            A,
-                            lda,
-                            B,
-                            ldb,
-                            beta,
-                            C,
-                            ldc
-                            );
+    profile.call_core_dgemm(
+                           transA,
+                           transB,
+                           m,
+                           n,
+                           k,
+                           alpha,
+                           A,
+                           lda,
+                           B,
+                           ldb,
+                           beta,
+                           C,
+                           ldc
+                           );
+    
+    ompt_control((unsigned long)CORE_DGEMM, count);
 
-    ompt_control((unsigned long)CBLAS_DGEMM, count);
+    return;
 }
 
 extern "C" void cblas_dsyrk(

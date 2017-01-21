@@ -12,22 +12,21 @@ typedef void (*plasma_init_hook_type)(void);
 
 typedef void (*plasma_finalize_hook_type)(void);
 
-typedef void (*cblas_dgemm_hook_type)(
-                                     const CBLAS_LAYOUT,
-                                     const CBLAS_TRANSPOSE,
-                                     const CBLAS_TRANSPOSE,
-                                     const MKL_INT,
-                                     const MKL_INT,
-                                     const MKL_INT,
-                                     const double,
-                                     const double *,
-                                     const MKL_INT,
-                                     const double *,
-                                     const MKL_INT,
-                                     const double,
-                                     double *,
-                                     const MKL_INT
-                                     );
+typedef void (*core_dgemm_hook_type)(
+                                    plasma_enum_t transA,
+                                    plasma_enum_t transB,
+                                    int m,
+                                    int n,
+                                    int k,
+                                    double alpha,
+                                    const double *A,
+                                    int lda,
+                                    const double *B,
+                                    int ldb,
+                                    double beta,
+                                    double *C,
+                                    int ldc
+                                    );
 
 typedef void (*core_dpotrf_hook_type)(
                                      plasma_enum_t uplo,

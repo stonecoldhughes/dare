@@ -7,7 +7,7 @@ map<string, map<ompt_task_id_t, struct kernel_node*> > Profile::kernel_data;
 
 mutex Profile::kernel_mut;
 
-atomic<unsigned long> Profile::cblas_dgemm_count;
+atomic<unsigned long> Profile::core_dgemm_count;
 atomic<unsigned long> Profile::core_dpotrf_count;
 atomic<unsigned long> Profile::cblas_dsyrk_count;
 atomic<unsigned long> Profile::core_dtrsm_count;
@@ -35,9 +35,9 @@ void Profile::setup()
     plasma_finalize_hook = (plasma_finalize_hook_type)dlsym(plasma_file, "plasma_finalize");
     if(plasma_finalize_hook == NULL) {printf("plasma_finalize() hook NULL\n"); exit(0);}
 
-    /* hook cblas_dgemm() */
-    cblas_dgemm_hook = (cblas_dgemm_hook_type)dlsym(plasma_file, "cblas_dgemm");
-    if(cblas_dgemm_hook == NULL) {printf("cblas_dgemm() hook NULL\n"); exit(0);}
+    /* hook core_dgemm() */
+    core_dgemm_hook = (core_dgemm_hook_type)dlsym(plasma_file, "core_dgemm");
+    if(core_dgemm_hook == NULL) {printf("core_dgemm() hook NULL\n"); exit(0);}
         
     /* hook cblas_dsyrk() */
     cblas_dsyrk_hook = (cblas_dsyrk_hook_type)dlsym(plasma_file, "cblas_dsyrk");
@@ -52,7 +52,7 @@ void Profile::setup()
     if(core_dpotrf_hook == NULL) {printf("core_dpotrf() hook NULL\n"); exit(0);}
 
     /*set atomic counters*/
-    cblas_dgemm_count = 0;
+    core_dgemm_count = 0;
     cblas_dsyrk_count = 0;
     core_dtrsm_count = 0;
     core_dpotrf_count = 0;
@@ -153,40 +153,38 @@ void Profile::kernel_to_file()
     return;
 }
 
-void Profile::call_cblas_dgemm(
-                              const  CBLAS_LAYOUT Layout,
-                              const  CBLAS_TRANSPOSE TransA,
-                              const  CBLAS_TRANSPOSE TransB,
-                              const MKL_INT M,
-                              const MKL_INT N,
-                              const MKL_INT K,
-                              const double alpha,
-                              const double *A,
-                              const MKL_INT lda,
-                              const double *B,
-                              const MKL_INT ldb,
-                              const double beta,
-                              double *C,
-                              const MKL_INT ldc
-                              )
+void Profile::call_core_dgemm(
+                        plasma_enum_t transA,
+                        plasma_enum_t transB,
+                        int m,
+                        int n,
+                        int k,
+                        double alpha,
+                        const double *A,
+                        int lda,
+                        const double *B,
+                        int ldb,
+                        double beta,
+                        double *C,
+                        int ldc
+                        )
 {
-    (*cblas_dgemm_hook)(
-                       Layout,
-                       TransA,
-                       TransB,
-                       M,
-                       N,
-                       K,
-                       alpha,
-                       A,
-                       lda,
-                       B,
-                       ldb,
-                       beta,
-                       C,
-                       ldc
-                       );
-    
+    (*core_dgemm_hook)(
+                      transA,
+                      transB,
+                      m,
+                      n,
+                      k,
+                      alpha,
+                      A,
+                      lda,
+                      B,
+                      ldb,
+                      beta,
+                      C,
+                      ldc
+                      );
+
     return;
 }
 
