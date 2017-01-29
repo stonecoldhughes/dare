@@ -132,6 +132,7 @@ class Profile
         static map<string, map<ompt_task_id_t, struct kernel_node*> > kernel_data;
         static mutex kernel_mut;
         void *plasma_file;
+        void *core_blas_file;
         
         /*Function pointers*/
         static ompt_get_thread_id_t get_thread_id_ptr;

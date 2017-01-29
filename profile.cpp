@@ -22,10 +22,13 @@ ompt_get_parallel_id_t Profile::get_parallel_id_ptr;
 /*This will obtain function pointers to hooks in the PLASMA library*/
 void Profile::setup()
 {
-    /*Obtain a handle to the plasma library*/
+    /* Obtain a handle to the plasma library */
     plasma_file = dlopen("/Users/hhughe11/plasma/lib/libplasma.so", RTLD_LAZY);
+    if(plasma_file == NULL) {printf("plasma_file null\n"); exit(0);}
 
-    if(plasma_file == NULL) {printf("plasma_file null\n"); exit(0);};
+    /* Obtain a handle to the core_blas library */
+    core_blas_file = dlopen("/Users/hhughe11/plasma/lib/libcoreblas.so", RTLD_LAZY);
+    if(core_blas_file == NULL) {printf("core_blas_file null\n"); exit(0);}
 
     /*hook plasma_init()*/
     plasma_init_hook = (plasma_init_hook_type)dlsym(plasma_file, "plasma_init");
