@@ -9,7 +9,7 @@ mutex Profile::kernel_mut;
 
 atomic<unsigned long> Profile::core_dgemm_count;
 atomic<unsigned long> Profile::core_dpotrf_count;
-atomic<unsigned long> Profile::cblas_dsyrk_count;
+atomic<unsigned long> Profile::core_dsyrk_count;
 atomic<unsigned long> Profile::core_dtrsm_count;
 
 /* Declare static class variables  */
@@ -24,8 +24,11 @@ void Profile::setup()
 {
     /*Obtain a handle to the plasma library*/
     plasma_file = dlopen("/Users/hhughe11/plasma/lib/libplasma.so", RTLD_LAZY);
+    if(plasma_file == NULL) {printf("plasma_file null\n"); exit(0);}
 
-    if(plasma_file == NULL) {printf("plasma_file null\n"); exit(0);};
+    /* Obtain a handle to the core_blas library */
+    core_blas_file = dlopen("/Users/hhughe11/plasma/lib/libcoreblas.so", RTLD_LAZY);
+    if(core_blas_file == NULL) {printf("core_blas_file null\n"); exit(0);}
 
     /*hook plasma_init()*/
     plasma_init_hook = (plasma_init_hook_type)dlsym(plasma_file, "plasma_init");
@@ -35,25 +38,25 @@ void Profile::setup()
     plasma_finalize_hook = (plasma_finalize_hook_type)dlsym(plasma_file, "plasma_finalize");
     if(plasma_finalize_hook == NULL) {printf("plasma_finalize() hook NULL\n"); exit(0);}
 
+    /* hook core_dsyrk() */
+    core_dsyrk_hook = (core_dsyrk_hook_type)dlsym(core_blas_file, "core_dsyrk");
+    if(core_dsyrk_hook == NULL) {printf("core_dsyrk() hook NULL\n"); exit(0);}
+    
     /* hook core_dgemm() */
-    core_dgemm_hook = (core_dgemm_hook_type)dlsym(plasma_file, "core_dgemm");
+    core_dgemm_hook = (core_dgemm_hook_type)dlsym(core_blas_file, "core_dgemm");
     if(core_dgemm_hook == NULL) {printf("core_dgemm() hook NULL\n"); exit(0);}
-        
-    /* hook cblas_dsyrk() */
-    cblas_dsyrk_hook = (cblas_dsyrk_hook_type)dlsym(plasma_file, "cblas_dsyrk");
-    if(cblas_dsyrk_hook == NULL) {printf("cblas_dsyrk() hook NULL\n"); exit(0);}
     
     /* hook core_dtrsm() */
-    core_dtrsm_hook = (core_dtrsm_hook_type)dlsym(plasma_file, "core_dtrsm");
+    core_dtrsm_hook = (core_dtrsm_hook_type)dlsym(core_blas_file, "core_dtrsm");
     if(core_dtrsm_hook == NULL) {printf("core_dtrsm() hook NULL\n"); exit(0);}
 
     /* hook core_dpotrf() */
-    core_dpotrf_hook = (core_dpotrf_hook_type)dlsym(plasma_file, "core_dpotrf");
+    core_dpotrf_hook = (core_dpotrf_hook_type)dlsym(core_blas_file, "core_dpotrf");
     if(core_dpotrf_hook == NULL) {printf("core_dpotrf() hook NULL\n"); exit(0);}
 
     /*set atomic counters*/
     core_dgemm_count = 0;
-    cblas_dsyrk_count = 0;
+    core_dsyrk_count = 0;
     core_dtrsm_count = 0;
     core_dpotrf_count = 0;
     
@@ -188,33 +191,31 @@ void Profile::call_core_dgemm(
     return;
 }
 
-void Profile::call_cblas_dsyrk(
-                              const  CBLAS_LAYOUT Layout,
-                              const  CBLAS_UPLO Uplo,
-                              const  CBLAS_TRANSPOSE Trans,
-                              const MKL_INT N,
-                              const MKL_INT K,
-                              const double alpha,
-                              const double *A,
-                              const MKL_INT lda,
-                              const double beta,
-                              double *C,
-                              const MKL_INT ldc
-                              )
+void Profile::call_core_dsyrk(
+                             plasma_enum_t uplo,
+                             plasma_enum_t trans,
+                             int n,
+                             int k,
+                             double alpha,
+                             const double *A,
+                             int lda,
+                             double beta,
+                             double *C,
+                             int ldc
+                             )
 {
-    (*cblas_dsyrk_hook)(
-                       Layout,
-                       Uplo,
-                       Trans,
-                       N,
-                       K,
-                       alpha,
-                       A,
-                       lda,
-                       beta,
-                       C,
-                       ldc
-                       );
+    (*core_dsyrk_hook)(
+                      uplo,
+                      trans,
+                      n,
+                      k,
+                      alpha,
+                      A,
+                      lda,
+                      beta,
+                      C,
+                      ldc
+                      );
 
     return;
 }

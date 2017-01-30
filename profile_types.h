@@ -49,16 +49,15 @@ typedef void (*core_dtrsm_hook_type)(
                                     int ldb
                                     );
 
-typedef void (*cblas_dsyrk_hook_type)(
-                                     const  CBLAS_LAYOUT,
-                                     const  CBLAS_UPLO,
-                                     const  CBLAS_TRANSPOSE,
-                                     const MKL_INT,
-                                     const MKL_INT,
-                                     const double,
-                                     const double *,
-                                     const MKL_INT,
-                                     const double,
-                                     double *,
-                                     const MKL_INT
-                                     );
+typedef void (*core_dsyrk_hook_type)(
+                                    plasma_enum_t uplo,
+                                    plasma_enum_t trans,
+                                    int n,
+                                    int k,
+                                    double alpha,
+                                    const double *A,
+                                    int lda,
+                                    double beta,
+                                    double *C,
+                                    int ldc
+                                    );

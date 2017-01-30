@@ -15,12 +15,10 @@ extern bool append;
 
 extern class Profile profile;
 
-//extern const string kernel_table[];
-
 typedef enum functions_enum
 {
     CORE_DGEMM = 0,
-    CBLAS_DSYRK = 1,
+    CORE_DSYRK = 1,
     CORE_DTRSM = 2,
     CORE_DPOTRF = 3,
     
@@ -30,8 +28,8 @@ typedef enum functions_enum
 /*Enumerated types*/
 const string kernel_table[] =
 {
-    "cblas_dgemm",
-    "cblas_dsyrk",
+    "core_dgemm",
+    "core_dsyrk",
     "core_dtrsm",
     "core_dpotrf"
 };
@@ -75,19 +73,18 @@ class Profile
                 int ldc
                 );
 
-        void call_cblas_dsyrk(
-                             const  CBLAS_LAYOUT Layout,
-                             const  CBLAS_UPLO Uplo,
-                             const  CBLAS_TRANSPOSE Trans,
-                             const MKL_INT N,
-                             const MKL_INT K,
-                             const double alpha,
-                             const double *A,
-                             const MKL_INT lda,
-                             const double beta,
-                             double *C,
-                             const MKL_INT ldc
-                             );
+        void call_core_dsyrk(
+                            plasma_enum_t uplo,
+                            plasma_enum_t trans,
+                            int n,
+                            int k,
+                            double alpha,
+                            const double *A,
+                            int lda,
+                            double beta,
+                            double *C,
+                            int ldc
+                            );
 
         void call_core_dtrsm(
                             plasma_enum_t side,
@@ -114,7 +111,7 @@ class Profile
         
         static atomic<unsigned long> core_dgemm_count;
         static atomic<unsigned long> core_dpotrf_count;
-        static atomic<unsigned long> cblas_dsyrk_count;
+        static atomic<unsigned long> core_dsyrk_count;
         static atomic<unsigned long> core_dtrsm_count;
 
     /* functions  */
@@ -130,6 +127,7 @@ class Profile
         static map<string, map<ompt_task_id_t, struct kernel_node*> > kernel_data;
         static mutex kernel_mut;
         void *plasma_file;
+        void *core_blas_file;
         
         /*Function pointers*/
         static ompt_get_thread_id_t get_thread_id_ptr;
@@ -138,7 +136,7 @@ class Profile
         plasma_init_hook_type plasma_init_hook;
         plasma_finalize_hook_type plasma_finalize_hook;
         core_dgemm_hook_type core_dgemm_hook;
-        cblas_dsyrk_hook_type cblas_dsyrk_hook;
+        core_dsyrk_hook_type core_dsyrk_hook;
         core_dtrsm_hook_type core_dtrsm_hook;
         core_dpotrf_hook_type core_dpotrf_hook;
 };

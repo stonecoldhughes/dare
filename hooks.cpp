@@ -63,63 +63,41 @@ extern "C" void core_dgemm(
     return;
 }
 
-extern "C" void cblas_dsyrk(
-                           const  CBLAS_LAYOUT Layout,
-                           const  CBLAS_UPLO Uplo,
-                           const  CBLAS_TRANSPOSE Trans,
-                           const MKL_INT N,
-                           const MKL_INT K,
-                           const double alpha,
-                           const double *A,
-                           const MKL_INT lda,
-                           const double beta,
-                           double *C,
-                           const MKL_INT ldc
-                           )
+extern "C" void core_dsyrk(
+                          plasma_enum_t uplo,
+                          plasma_enum_t trans,
+                          int n,
+                          int k,
+                          double alpha,
+                          const double *A,
+                          int lda,
+                          double beta,
+                          double *C,
+                          int ldc
+                          )
 {
-    int count = profile.cblas_dsyrk_count++;
+    int count = profile.core_dsyrk_count++;
 
-    ompt_control((unsigned long)CBLAS_DSYRK, count);
+    ompt_control((unsigned long)CORE_DSYRK, count);
+    
+    profile.call_core_dsyrk(
+                           uplo,
+                           trans,
+                           n,
+                           k,
+                           alpha,
+                           A,
+                           lda,
+                           beta,
+                           C,
+                           ldc
+                           );
 
-    profile.call_cblas_dsyrk(
-                            Layout,
-                            Uplo,
-                            Trans,
-                            N,
-                            K,
-                            alpha,
-                            A,
-                            lda,
-                            beta,
-                            C,
-                            ldc
-                            );
-
-    ompt_control((unsigned long)CBLAS_DSYRK, count);
+    ompt_control((unsigned long)CORE_DSYRK, count);
 
     return;
 }
 
-/* Captain! Test code */
-void cblas_dtrsm (const CBLAS_LAYOUT Layout, const CBLAS_SIDE side, const CBLAS_UPLO
-uplo, const CBLAS_TRANSPOSE transa, const CBLAS_DIAG diag, const MKL_INT m, const
-MKL_INT n, const double alpha, const double *a, const MKL_INT lda, double *b, const
-MKL_INT ldb)
-{
-    //printf("Ahoy! cblas_dtrsm() hooked!\n");
-    return;
-}
-
-extern "C" void core_dtrsm(plasma_enum_t side, plasma_enum_t uplo,
- plasma_enum_t transA, plasma_enum_t diag,
- int m, int n,
- double alpha, const double *A, int lda,
- double *B, int ldb)
-{
-    printf("Ahoy! core_dtrsm() hooked\n");
-    return;
-}
-/*
 extern "C" void core_dtrsm(
                           plasma_enum_t side,
                           plasma_enum_t uplo,
@@ -156,7 +134,7 @@ extern "C" void core_dtrsm(
 
     return;
 }
-*/
+
 extern "C" int core_dpotrf(
                           plasma_enum_t uplo,
                           int n,
@@ -164,7 +142,6 @@ extern "C" int core_dpotrf(
                           int lda
                           )
 {
-    printf("Hello, World!\n");
     int count = profile.core_dpotrf_count++;
 
     ompt_control((unsigned long)CORE_DPOTRF, count);
