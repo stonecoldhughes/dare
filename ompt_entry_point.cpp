@@ -15,18 +15,8 @@ bool append = false;
 
 class Profile profile;
 
-/*Enumerated types*/
-const string kernel_table[] =
-{
-    "cblas_dgemm",
-    "cblas_dsyrk",
-    "cblas_dtrsm",
-    "LAPACKE_dpotrf"
-};
-
 /*Entry point for the OMPT interface*/
 ompt_initialize_t ompt_tool(void)
 {
-  //return &(profile.ompt_initialize);
   return profile.ompt_initialize;
 }

@@ -22,145 +22,138 @@ extern "C" int plasma_finalize()
     return 0;
 }
 
-extern "C" void cblas_dgemm(
-                           const  CBLAS_LAYOUT Layout,
-                           const  CBLAS_TRANSPOSE TransA,
-                           const  CBLAS_TRANSPOSE TransB,
-                           const MKL_INT M,
-                           const MKL_INT N,
-                           const MKL_INT K,
-                           const double alpha,
-                           const double *A,
-                           const MKL_INT lda,
-                           const double *B,
-                           const MKL_INT ldb,
-                           const double beta,
-                           double *C,
-                           const MKL_INT ldc
-                           )
+extern "C" void core_dgemm(
+                          plasma_enum_t transA,
+                          plasma_enum_t transB,
+                          int m,
+                          int n,
+                          int k,
+                          double alpha,
+                          const double *A,
+                          int lda,
+                          const double *B,
+                          int ldb,
+                          double beta,
+                          double *C,
+                          int ldc
+                          )
 {
-    int count = profile.cblas_dgemm_count++;
+    int count = profile.core_dgemm_count++;
 
-    ompt_control((unsigned long)CBLAS_DGEMM, count);
+    ompt_control((unsigned long)CORE_DGEMM, count);
 
-    profile.call_cblas_dgemm(
-                            Layout,
-                            TransA,
-                            TransB,
-                            M,
-                            N,
-                            K,
-                            alpha,
-                            A,
-                            lda,
-                            B,
-                            ldb,
-                            beta,
-                            C,
-                            ldc
-                            );
-
-    ompt_control((unsigned long)CBLAS_DGEMM, count);
-}
-
-extern "C" void cblas_dsyrk(
-                           const  CBLAS_LAYOUT Layout,
-                           const  CBLAS_UPLO Uplo,
-                           const  CBLAS_TRANSPOSE Trans,
-                           const MKL_INT N,
-                           const MKL_INT K,
-                           const double alpha,
-                           const double *A,
-                           const MKL_INT lda,
-                           const double beta,
-                           double *C,
-                           const MKL_INT ldc
-                           )
-{
-    int count = profile.cblas_dsyrk_count++;
-
-    ompt_control((unsigned long)CBLAS_DSYRK, count);
-
-    profile.call_cblas_dsyrk(
-                            Layout,
-                            Uplo,
-                            Trans,
-                            N,
-                            K,
-                            alpha,
-                            A,
-                            lda,
-                            beta,
-                            C,
-                            ldc
-                            );
-
-    ompt_control((unsigned long)CBLAS_DSYRK, count);
+    profile.call_core_dgemm(
+                           transA,
+                           transB,
+                           m,
+                           n,
+                           k,
+                           alpha,
+                           A,
+                           lda,
+                           B,
+                           ldb,
+                           beta,
+                           C,
+                           ldc
+                           );
+    
+    ompt_control((unsigned long)CORE_DGEMM, count);
 
     return;
 }
 
-
-extern "C" void cblas_dtrsm(
-                           const  CBLAS_LAYOUT Layout,
-                           const  CBLAS_SIDE Side,
-                           const  CBLAS_UPLO Uplo,
-                           const  CBLAS_TRANSPOSE TransA,
-                           const  CBLAS_DIAG Diag,
-                           const MKL_INT M,
-                           const MKL_INT N,
-                           const double alpha,
-                           const double *A,
-                           const MKL_INT lda,
-                           double *B,
-                           const MKL_INT ldb
-                           )
+extern "C" void core_dsyrk(
+                          plasma_enum_t uplo,
+                          plasma_enum_t trans,
+                          int n,
+                          int k,
+                          double alpha,
+                          const double *A,
+                          int lda,
+                          double beta,
+                          double *C,
+                          int ldc
+                          )
 {
-    int count = profile.cblas_dtrsm_count++;
+    int count = profile.core_dsyrk_count++;
 
-    ompt_control((unsigned long)CBLAS_DTRSM, count);
+    ompt_control((unsigned long)CORE_DSYRK, count);
+    
+    profile.call_core_dsyrk(
+                           uplo,
+                           trans,
+                           n,
+                           k,
+                           alpha,
+                           A,
+                           lda,
+                           beta,
+                           C,
+                           ldc
+                           );
 
-    profile.call_cblas_dtrsm(
-                            Layout,
-                            Side,
-                            Uplo,
-                            TransA,
-                            Diag,
-                            M,
-                            N,
-                            alpha,
-                            A,
-                            lda,
-                            B, 
-                            ldb
-                            );
-
-    ompt_control((unsigned long)CBLAS_DTRSM, count);
+    ompt_control((unsigned long)CORE_DSYRK, count);
 
     return;
 }
 
-extern "C" lapack_int LAPACKE_dpotrf(
-                                    int matrix_layout,
-                                    char uplo,
-                                    lapack_int n,
-                                    double* a,
-                                    lapack_int lda
-                                    )
+extern "C" void core_dtrsm(
+                          plasma_enum_t side,
+                          plasma_enum_t uplo,
+                          plasma_enum_t transA,
+                          plasma_enum_t diag,
+                          int m,
+                          int n,
+                          double alpha,
+                          const double *A,
+                          int lda,
+                          double *B,
+                          int ldb
+                          )
 {
-    int count = profile.lapacke_dpotrf_count++;
+    int count = profile.core_dtrsm_count++;
 
-    ompt_control((unsigned long)LAPACKE_DPOTRF, count);
+    ompt_control((unsigned long)CORE_DTRSM, count);
+    
+    profile.call_core_dtrsm(
+                           side,
+                           uplo,
+                           transA,
+                           diag,
+                           m,
+                           n,
+                           alpha,
+                           A,
+                           lda,
+                           B,
+                           ldb
+                           );
 
-    profile.call_lapacke_dpotrf(
-                               matrix_layout,
-                               uplo,
-                               n,
-                               a,
-                               lda
-                               );
+    ompt_control((unsigned long)CORE_DTRSM, count);
 
-    ompt_control((unsigned long)LAPACKE_DPOTRF, count);
+    return;
+}
+
+extern "C" int core_dpotrf(
+                          plasma_enum_t uplo,
+                          int n,
+                          double *A,
+                          int lda
+                          )
+{
+    int count = profile.core_dpotrf_count++;
+
+    ompt_control((unsigned long)CORE_DPOTRF, count);
+
+    profile.call_core_dpotrf(
+                            uplo,
+                            n,
+                            A,
+                            lda
+                            );
+
+    ompt_control((unsigned long)CORE_DPOTRF, count);
 
     return 0;
 }
