@@ -8,10 +8,6 @@ using namespace std;
 /*Typedefs*/
 typedef int (*callback_typecast)(ompt_event_t, ompt_callback_t);
 
-typedef void (*plasma_init_hook_type)(void);
-
-typedef void (*plasma_finalize_hook_type)(void);
-
 typedef void (*core_dgemm_hook_type)(
                                     plasma_enum_t transA,
                                     plasma_enum_t transB,

@@ -20,23 +20,11 @@ ompt_get_task_id_t Profile::get_task_id_ptr;
 ompt_get_parallel_id_t Profile::get_parallel_id_ptr;
 
 /*This will obtain function pointers to hooks in the PLASMA library*/
-void Profile::setup()
+Profile::Profile()
 {
-    /* Obtain a handle to the plasma library */
-    plasma_file = dlopen("/Users/hhughe11/plasma/lib/libplasma.so", RTLD_LAZY);
-    if(plasma_file == NULL) {printf("plasma_file null\n"); exit(0);}
-
     /* Obtain a handle to the core_blas library */
     core_blas_file = dlopen("/Users/hhughe11/plasma/lib/libcoreblas.so", RTLD_LAZY);
     if(core_blas_file == NULL) {printf("core_blas_file null\n"); exit(0);}
-
-    /*hook plasma_init()*/
-    plasma_init_hook = (plasma_init_hook_type)dlsym(plasma_file, "plasma_init");
-    if(plasma_init_hook == NULL) {printf("plasma_init() hook NULL\n"); exit(0);}
-
-    /*hook plasma_finalize()*/
-    plasma_finalize_hook = (plasma_finalize_hook_type)dlsym(plasma_file, "plasma_finalize");
-    if(plasma_finalize_hook == NULL) {printf("plasma_finalize() hook NULL\n"); exit(0);}
 
     /* hook core_dsyrk() */
     core_dsyrk_hook = (core_dsyrk_hook_type)dlsym(core_blas_file, "core_dsyrk");
@@ -63,7 +51,7 @@ void Profile::setup()
     return;
 }
 
-void Profile::finish()
+Profile::~Profile()
 {
     dump_files();
 
@@ -86,20 +74,6 @@ ompt_thread_id_t Profile::get_thread_id()
 ompt_parallel_id_t Profile::get_parallel_id(int ancestor_level)
 {
     return (*get_parallel_id_ptr)(ancestor_level);
-}
-
-void Profile::call_plasma_init()
-{
-    (*plasma_init_hook)();
-
-    return;
-}
-
-void Profile::call_plasma_finalize()
-{
-    (*plasma_finalize_hook)();
-
-    return;
 }
 
 void Profile::dump_files()

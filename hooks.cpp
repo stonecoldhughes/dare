@@ -1,8 +1,7 @@
 #include "profile.h"
 
 using namespace std;
-
-/*Plasma init needs to serve as the constructor*/
+/*
 extern "C" int plasma_init()
 {
     profile.setup();
@@ -12,7 +11,6 @@ extern "C" int plasma_init()
     return 0;
 }
 
-/*This needs to serve as the destructor*/
 extern "C" int plasma_finalize()
 {
     profile.finish();
@@ -21,7 +19,7 @@ extern "C" int plasma_finalize()
 
     return 0;
 }
-
+*/
 extern "C" void core_dgemm(
                           plasma_enum_t transA,
                           plasma_enum_t transB,

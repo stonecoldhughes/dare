@@ -17,6 +17,15 @@ add_library(
            callbacks.cpp
            )
 
+#Change this to add_custom_command() to have it create generated output files
+add_custom_target(
+                 autogenerate ALL 
+                 COMMAND python autogenerate.py
+                 COMMENT "Running autogenerate.py"
+                 )
+
+add_dependencies(main profile_lib autogenerate)
+
 target_link_libraries(
                      profile_lib
                      /Users/hhughe11/libomp_oss/src/libiomp5.dylib

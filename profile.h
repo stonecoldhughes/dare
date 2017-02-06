@@ -49,13 +49,11 @@ class Profile
 {
     public:
         
-        void setup();
-        void finish();
+        Profile();
+        ~Profile();
         ompt_task_id_t get_task_id(int depth = 0);
         static ompt_thread_id_t get_thread_id();
         ompt_parallel_id_t get_parallel_id(int ancestor_level = 0);
-        void call_plasma_init();
-        void call_plasma_finalize();
 
         void call_core_dgemm(
                 plasma_enum_t transA,
@@ -133,8 +131,6 @@ class Profile
         static ompt_get_thread_id_t get_thread_id_ptr;
         static ompt_get_task_id_t get_task_id_ptr;
         static ompt_get_parallel_id_t get_parallel_id_ptr;
-        plasma_init_hook_type plasma_init_hook;
-        plasma_finalize_hook_type plasma_finalize_hook;
         core_dgemm_hook_type core_dgemm_hook;
         core_dsyrk_hook_type core_dsyrk_hook;
         core_dtrsm_hook_type core_dtrsm_hook;
