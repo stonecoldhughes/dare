@@ -7,6 +7,7 @@ map<string, map<ompt_task_id_t, struct kernel_node*> > Profile::kernel_data;
 
 mutex Profile::kernel_mut;
 
+/* Captain! Outsource this to a generated C file */
 atomic<unsigned long> Profile::core_dgemm_count;
 atomic<unsigned long> Profile::core_dpotrf_count;
 atomic<unsigned long> Profile::core_dsyrk_count;
@@ -22,6 +23,7 @@ ompt_get_parallel_id_t Profile::get_parallel_id_ptr;
 /*This will obtain function pointers to hooks in the PLASMA library*/
 Profile::Profile()
 {
+    /* Captain! Outsource all of this functionality to a generated C file */
     /* Obtain a handle to the core_blas library */
     core_blas_file = dlopen("/Users/hhughe11/plasma/lib/libcoreblas.so", RTLD_LAZY);
     if(core_blas_file == NULL) {printf("core_blas_file null\n"); exit(0);}

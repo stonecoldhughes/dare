@@ -18,11 +18,12 @@ add_library(
            )
 
 #Change this to add_custom_command() to have it create generated output files
-add_custom_target(
-                 autogenerate ALL 
-                 COMMAND python autogenerate.py
-                 COMMENT "Running autogenerate.py"
-                 )
+#add_custom_command() will create files that the rest of the project depends on
+#add_custom_target(
+ #                autogenerate ALL 
+  #               COMMAND python autogenerate.py
+   #              COMMENT "Running autogenerate.py"
+    #             )
 
 add_dependencies(main profile_lib autogenerate)
 

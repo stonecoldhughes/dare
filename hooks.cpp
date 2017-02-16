@@ -1,25 +1,7 @@
 #include "profile.h"
 
 using namespace std;
-/*
-extern "C" int plasma_init()
-{
-    profile.setup();
 
-    profile.call_plasma_init();
-
-    return 0;
-}
-
-extern "C" int plasma_finalize()
-{
-    profile.finish();
-
-    profile.call_plasma_finalize();
-
-    return 0;
-}
-*/
 extern "C" void core_dgemm(
                           plasma_enum_t transA,
                           plasma_enum_t transB,

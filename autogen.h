@@ -5,9 +5,26 @@
 
 using namespace std;
 
-/*Typedefs*/
-typedef int (*callback_typecast)(ompt_event_t, ompt_callback_t);
+typedef enum functions_enum
+{
+    CORE_DGEMM = 0,
+    CORE_DSYRK = 1,
+    CORE_DTRSM = 2,
+    CORE_DPOTRF = 3,
+    
+    TABLE_SIZE
+} functions_enum;
 
+/*Enumerated types*/
+const string kernel_table[] =
+{
+    "core_dgemm",
+    "core_dsyrk",
+    "core_dtrsm",
+    "core_dpotrf"
+};
+
+/* Captain! Put all these in a generated header file */
 typedef void (*core_dgemm_hook_type)(
                                     plasma_enum_t transA,
                                     plasma_enum_t transB,

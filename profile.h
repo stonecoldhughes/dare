@@ -7,7 +7,7 @@
 #include "dlfcn.h"
 #include "stdio.h"
 #include "stdint.h"
-#include "profile_types.h"
+#include "autogen.h"
 
 using namespace std;
 
@@ -15,26 +15,7 @@ extern bool append;
 
 extern class Profile profile;
 
-typedef enum functions_enum
-{
-    CORE_DGEMM = 0,
-    CORE_DSYRK = 1,
-    CORE_DTRSM = 2,
-    CORE_DPOTRF = 3,
-    
-    TABLE_SIZE
-} functions_enum;
-
-/*Enumerated types*/
-const string kernel_table[] =
-{
-    "core_dgemm",
-    "core_dsyrk",
-    "core_dtrsm",
-    "core_dpotrf"
-};
-
-
+/* Captain! Put functions_enum and kernel_table can be put in a generated header file */
 /*Data structures*/
 struct kernel_node
 {
@@ -55,6 +36,8 @@ class Profile
         static ompt_thread_id_t get_thread_id();
         ompt_parallel_id_t get_parallel_id(int ancestor_level = 0);
 
+        /* Captain! These can be done away with and replaced by an array of length
+           TABLE_SIZE in which each entry corresponds to a function pointer.*/
         void call_core_dgemm(
                 plasma_enum_t transA,
                 plasma_enum_t transB,
@@ -107,6 +90,7 @@ class Profile
 
         static void ompt_initialize(ompt_function_lookup_t, const char*, unsigned int);
         
+        /* Captain! These can be replaced with an array of length TABLE_SIZE */
         static atomic<unsigned long> core_dgemm_count;
         static atomic<unsigned long> core_dpotrf_count;
         static atomic<unsigned long> core_dsyrk_count;

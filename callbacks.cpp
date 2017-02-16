@@ -5,6 +5,9 @@
 
 using namespace std;
 
+/* Typedef for callbacks */
+typedef int (*callback_typecast)(ompt_event_t, ompt_callback_t);
+
 /*Register event handlers*/
 void Profile::ompt_initialize
     (
