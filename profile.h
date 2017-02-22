@@ -7,23 +7,20 @@
 #include "dlfcn.h"
 #include "stdio.h"
 #include "stdint.h"
-#include "autogen.h"
+#include "autogen_types.h"
 
 using namespace std;
 
-extern bool append;
-
-extern class Profile profile;
-
 /* Captain! Put functions_enum and kernel_table can be put in a generated header file */
 /*Data structures*/
-struct kernel_node
+class kernel_node
 {
-    double t_start;
-    double t_end; 
-    ompt_task_id_t task_id;
-    ompt_thread_id_t thread_id;
-    string kernel;
+    public:
+        double t_start;
+        double t_end; 
+        ompt_task_id_t task_id;
+        ompt_thread_id_t thread_id;
+        string kernel;
 };
 
 class Profile
@@ -95,6 +92,8 @@ class Profile
         static atomic<unsigned long> core_dpotrf_count;
         static atomic<unsigned long> core_dsyrk_count;
         static atomic<unsigned long> core_dtrsm_count;
+        void (*core[TABLE_SIZE])();
+        static atomic<unsigned long> core_count[TABLE_SIZE];
 
     /* functions  */
     protected:
@@ -106,7 +105,7 @@ class Profile
     /* variables  */
     protected:    
 
-        static map<string, map<ompt_task_id_t, struct kernel_node*> > kernel_data;
+        static map<string, map<ompt_task_id_t, class kernel_node*> > kernel_data;
         static mutex kernel_mut;
         void *plasma_file;
         void *core_blas_file;
@@ -115,6 +114,7 @@ class Profile
         static ompt_get_thread_id_t get_thread_id_ptr;
         static ompt_get_task_id_t get_task_id_ptr;
         static ompt_get_parallel_id_t get_parallel_id_ptr;
+        /* Delete below */
         core_dgemm_hook_type core_dgemm_hook;
         core_dsyrk_hook_type core_dsyrk_hook;
         core_dtrsm_hook_type core_dtrsm_hook;

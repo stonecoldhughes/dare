@@ -30,21 +30,19 @@ void Profile::ompt_initialize
     return;
 }
 
-/*Captain! You can't pass the thread_id to this function because all parameters
-  are used for "kernel" and "task_id". Get the thread ID in the function. But... is this the
-  same thread that called it?!*/
+/* Captain! There is a bad access somewhere in this function causing a segfault */
 void Profile::ompt_control_cb(uint64_t kernel, uint64_t task_id)
 {
-    map<string, map<ompt_task_id_t, struct kernel_node*> >::iterator iter1;
-    map<ompt_task_id_t, struct kernel_node*>::iterator iter2;
-    struct kernel_node *knode;
+    map<string, map<ompt_task_id_t, class kernel_node*> >::iterator iter1;
+    map<ompt_task_id_t, class kernel_node*>::iterator iter2;
+    class kernel_node *knode;
 
     iter1 = kernel_data.find(kernel_table[kernel]);
 
     /*first time the kernel is invoked*/
     if(iter1 == kernel_data.end())
     {
-        knode = (struct kernel_node*)malloc(sizeof(struct kernel_node));
+        knode = new class kernel_node;
         knode->kernel = kernel_table[kernel];
         knode->t_start = omp_get_wtime();
         knode->t_end = -1;
@@ -66,7 +64,7 @@ void Profile::ompt_control_cb(uint64_t kernel, uint64_t task_id)
         /*kernel has been invoked, but this is a new task*/
         if(iter2 == iter1->second.end())
         {
-            knode = (struct kernel_node*)malloc(sizeof(struct kernel_node));
+            knode = new class kernel_node;
             knode->kernel = kernel_table[kernel];
             knode->t_start = omp_get_wtime();
             knode->t_end = -1;
@@ -84,7 +82,9 @@ void Profile::ompt_control_cb(uint64_t kernel, uint64_t task_id)
         /*kernel has been invoked, task exists*/
         else
         {
+            kernel_mut.lock();
             kernel_data[kernel_table[kernel]][task_id]->t_end = omp_get_wtime();
+            kernel_mut.unlock();
         }
     }
 

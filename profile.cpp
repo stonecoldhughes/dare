@@ -1,5 +1,7 @@
 #include "profile.h"
 
+extern bool append;
+
 using namespace std;
 
 /*Declaration of static member variables*/
@@ -7,51 +9,12 @@ map<string, map<ompt_task_id_t, struct kernel_node*> > Profile::kernel_data;
 
 mutex Profile::kernel_mut;
 
-/* Captain! Outsource this to a generated C file */
-atomic<unsigned long> Profile::core_dgemm_count;
-atomic<unsigned long> Profile::core_dpotrf_count;
-atomic<unsigned long> Profile::core_dsyrk_count;
-atomic<unsigned long> Profile::core_dtrsm_count;
-
 /* Declare static class variables  */
 ompt_get_thread_id_t Profile::get_thread_id_ptr;
 
 ompt_get_task_id_t Profile::get_task_id_ptr;
 
 ompt_get_parallel_id_t Profile::get_parallel_id_ptr;
-
-/*This will obtain function pointers to hooks in the PLASMA library*/
-Profile::Profile()
-{
-    /* Captain! Outsource all of this functionality to a generated C file */
-    /* Obtain a handle to the core_blas library */
-    core_blas_file = dlopen("/Users/hhughe11/plasma/lib/libcoreblas.so", RTLD_LAZY);
-    if(core_blas_file == NULL) {printf("core_blas_file null\n"); exit(0);}
-
-    /* hook core_dsyrk() */
-    core_dsyrk_hook = (core_dsyrk_hook_type)dlsym(core_blas_file, "core_dsyrk");
-    if(core_dsyrk_hook == NULL) {printf("core_dsyrk() hook NULL\n"); exit(0);}
-    
-    /* hook core_dgemm() */
-    core_dgemm_hook = (core_dgemm_hook_type)dlsym(core_blas_file, "core_dgemm");
-    if(core_dgemm_hook == NULL) {printf("core_dgemm() hook NULL\n"); exit(0);}
-    
-    /* hook core_dtrsm() */
-    core_dtrsm_hook = (core_dtrsm_hook_type)dlsym(core_blas_file, "core_dtrsm");
-    if(core_dtrsm_hook == NULL) {printf("core_dtrsm() hook NULL\n"); exit(0);}
-
-    /* hook core_dpotrf() */
-    core_dpotrf_hook = (core_dpotrf_hook_type)dlsym(core_blas_file, "core_dpotrf");
-    if(core_dpotrf_hook == NULL) {printf("core_dpotrf() hook NULL\n"); exit(0);}
-
-    /*set atomic counters*/
-    core_dgemm_count = 0;
-    core_dsyrk_count = 0;
-    core_dtrsm_count = 0;
-    core_dpotrf_count = 0;
-    
-    return;
-}
 
 Profile::~Profile()
 {
@@ -120,7 +83,9 @@ void Profile::kernel_to_file()
                     ,iter2->second->task_id
                     ,iter2->second->thread_id
                    );  
-            free(iter2->second);
+
+            /* This is the kernel_node */
+            delete iter2->second;
         }   
         iter1->second.clear();
     }

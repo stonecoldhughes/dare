@@ -1,18 +1,27 @@
 set(CMAKE_C_COMPILER /Users/hhughe11/llvm_dir/build/bin/clang-4.0)
 
+#Check value of variable and if it isn't set, comment something to the user
+if(NOT DEFINED PLASMA_INCLUDE)
+    message(FATAL_ERROR "Run CMake with -DPLASMA_INCLUDE=/example/path")
+else()
+    message(STATUS "PLASMA_INCLUDE=${PLASMA_INCLUDE}")
+endif()
+
 project(optimize C CXX)
 
+#/Users/hhughe11/plasma/include is plasma include directory
 include_directories(
                    /Users/hhughe11/libomp_oss/src
-                   /Users/hhughe11/plasma/include
+                   ${PLASMA_INCLUDE}
                    )
 
 add_executable(main main.c)
 
 add_library(
            profile_lib SHARED 
-           profile.cpp 
            hooks.cpp
+           autogen.cpp
+           profile.cpp 
            ompt_entry_point.cpp
            callbacks.cpp
            )
@@ -33,6 +42,7 @@ target_link_libraries(
                      /Users/hhughe11/plasma/lib/libcoreblas.so
                      /Users/hhughe11/plasma/lib/libplasma.so
                      -flat_namespace
+                     -g
                      )
 
 target_link_libraries(
@@ -45,4 +55,5 @@ target_link_libraries(
                      -lm
                      -ldl
                      -flat_namespace
+                     -g
                      )
