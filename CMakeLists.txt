@@ -15,26 +15,26 @@ include_directories(
                    ${PLASMA_INCLUDE}
                    )
 
+#Add a DEPENDS clause in this command so it builds if any of the files in plasma.h change
+#Test it out by changing shit and seeing what it does
+add_custom_command(
+                  OUTPUT autogen_types_prelim.h autogen_prelim.cpp
+                  COMMAND python autogen.py ${PLASMA_INCLUDE}
+                  )
+
 add_executable(main main.c)
 
 add_library(
            profile_lib SHARED 
            hooks.cpp
            autogen.cpp
+           autogen_prelim.cpp
            profile.cpp 
            ompt_entry_point.cpp
            callbacks.cpp
            )
 
-#Change this to add_custom_command() to have it create generated output files
-#add_custom_command() will create files that the rest of the project depends on
-#add_custom_target(
- #                autogenerate ALL 
-  #               COMMAND python autogenerate.py
-   #              COMMENT "Running autogenerate.py"
-    #             )
-
-add_dependencies(main profile_lib autogenerate)
+add_dependencies(main profile_lib)
 
 target_link_libraries(
                      profile_lib

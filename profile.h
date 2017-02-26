@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "autogen_types.h"
+#include "autogen_types_prelim.h"
 
 using namespace std;
 
@@ -88,10 +89,6 @@ class Profile
         static void ompt_initialize(ompt_function_lookup_t, const char*, unsigned int);
         
         /* Captain! These can be replaced with an array of length TABLE_SIZE */
-        static atomic<unsigned long> core_dgemm_count;
-        static atomic<unsigned long> core_dpotrf_count;
-        static atomic<unsigned long> core_dsyrk_count;
-        static atomic<unsigned long> core_dtrsm_count;
         void (*core[TABLE_SIZE])();
         static atomic<unsigned long> core_count[TABLE_SIZE];
 

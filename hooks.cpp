@@ -21,7 +21,7 @@ extern "C" void core_dgemm(
                           int ldc
                           )
 {
-    int count = profile.core_dgemm_count++;
+    int count = profile.core_count[CORE_DGEMM]++;
 
     ompt_control((unsigned long)CORE_DGEMM, count);
 
@@ -59,7 +59,6 @@ extern "C" void core_dsyrk(
                           int ldc
                           )
 {
-    //int count = profile.core_dsyrk_count++;
     int count = profile.core_count[CORE_DSYRK]++;
 
     ompt_control((unsigned long)CORE_DSYRK, count);
@@ -76,21 +75,7 @@ extern "C" void core_dsyrk(
                     C,
                     ldc
                     );
-    /*
-    profile.call_core_dsyrk(
-                           uplo,
-                           trans,
-                           n,
-                           k,
-                           alpha,
-                           A,
-                           lda,
-                           beta,
-                           C,
-                           ldc
-                           );
 
-    */
     ompt_control((unsigned long)CORE_DSYRK, count);
 
     return;
@@ -110,7 +95,7 @@ extern "C" void core_dtrsm(
                           int ldb
                           )
 {
-    int count = profile.core_dtrsm_count++;
+    int count = profile.core_count[CORE_DTRSM]++;
 
     ompt_control((unsigned long)CORE_DTRSM, count);
     
@@ -140,7 +125,7 @@ extern "C" int core_dpotrf(
                           int lda
                           )
 {
-    int count = profile.core_dpotrf_count++;
+    int count = profile.core_count[CORE_DPOTRF]++;
 
     ompt_control((unsigned long)CORE_DPOTRF, count);
 

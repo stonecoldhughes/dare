@@ -3,17 +3,13 @@
 
 using namespace std;
 
-atomic<unsigned long> Profile::core_dgemm_count;
-atomic<unsigned long> Profile::core_dpotrf_count;
-atomic<unsigned long> Profile::core_dsyrk_count;
-atomic<unsigned long> Profile::core_dtrsm_count;
 atomic<unsigned long> Profile::core_count[TABLE_SIZE];
 
 /*This will obtain function pointers to hooks in the PLASMA library*/
 Profile::Profile()
 {
     void (*fptr)();
-    /* Captain! Outsource all of this functionality to a generated C file */
+
     /* Obtain a handle to the core_blas library */
     core_blas_file = dlopen("/Users/hhughe11/plasma/lib/libcoreblas.so", RTLD_LAZY);
     if(core_blas_file == NULL) {printf("core_blas_file null\n"); exit(0);}
@@ -36,11 +32,6 @@ Profile::Profile()
     if(core_dpotrf_hook == NULL) {printf("core_dpotrf() hook NULL\n"); exit(0);}
 
     /*set atomic counters*/
-    core_dgemm_count = 0;
-    core_dsyrk_count = 0;
-    core_dtrsm_count = 0;
-    core_dpotrf_count = 0;
-
     for(int i = 0; i < TABLE_SIZE; i++)
     {
         core_count[i] = 0;
