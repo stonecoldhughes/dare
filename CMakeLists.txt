@@ -20,6 +20,7 @@ include_directories(
 add_custom_command(
                   OUTPUT autogen_types_prelim.h autogen_prelim.cpp
                   COMMAND python autogen.py ${PLASMA_INCLUDE}
+                  DEPENDS ${PLASMA_INCLUDE}
                   )
 
 add_executable(main main.c)
