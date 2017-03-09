@@ -18,8 +18,8 @@ include_directories(
 #Add a DEPENDS clause in this command so it builds if any of the files in plasma.h change
 #Test it out by changing shit and seeing what it does
 add_custom_command(
-                  OUTPUT autogen_types_prelim.h autogen_prelim.cpp
-                  COMMAND python autogen.py ${PLASMA_INCLUDE}
+                  OUTPUT autogen_prelim.cpp
+                  COMMAND python hello.py ${PLASMA_INCLUDE}
                   DEPENDS ${PLASMA_INCLUDE}
                   )
 
@@ -35,8 +35,6 @@ add_library(
            callbacks.cpp
            )
 
-add_dependencies(main profile_lib)
-
 target_link_libraries(
                      profile_lib
                      /Users/hhughe11/libomp_oss/src/libiomp5.dylib
@@ -49,9 +47,9 @@ target_link_libraries(
 target_link_libraries(
                      main
                      profile_lib
-                     /opt/intel/compilers_and_libraries_2016.3.170/mac/mkl/lib/libmkl_intel_lp64.dylib
-                     /opt/intel/compilers_and_libraries_2016.3.170/mac/mkl/lib/libmkl_core.dylib
-                     /opt/intel/compilers_and_libraries_2016.3.170/mac/mkl/lib/libmkl_intel_thread.dylib
+                     /Users/hhughe11/research/intel_compiler/compilers_and_libraries_2017.2.163/mac/mkl/lib/libmkl_intel_lp64.dylib
+                     /Users/hhughe11/research/intel_compiler/compilers_and_libraries_2017.2.163/mac/mkl/lib/libmkl_core.dylib
+                     /Users/hhughe11/research/intel_compiler/compilers_and_libraries_2017.2.163/mac/mkl/lib/libmkl_intel_thread.dylib
                      -lpthread
                      -lm
                      -ldl
