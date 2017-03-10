@@ -3,7 +3,6 @@
 #include <string>
 #include <atomic>
 #include "omp.h"
-#include "ompt.h"
 #include "dlfcn.h"
 #include "stdio.h"
 #include "stdint.h"
@@ -11,15 +10,14 @@
 
 using namespace std;
 
-/* Captain! Put functions_enum and kernel_table can be put in a generated header file */
-/*Data structures*/
 class kernel_node
 {
     public:
         double t_start;
         double t_end; 
-        ompt_task_id_t task_id;
-        ompt_thread_id_t thread_id;
+        uint64_t task_id;
+        /* Captain! Is this right? */
+        uint64_t thread_id;
         string kernel;
 };
 
@@ -29,9 +27,6 @@ class Profile
         
         Profile();
         ~Profile();
-        ompt_task_id_t get_task_id(int depth = 0);
-        static ompt_thread_id_t get_thread_id();
-        ompt_parallel_id_t get_parallel_id(int ancestor_level = 0);
 
         /* Captain! These can be done away with and replaced by an array of length
            TABLE_SIZE in which each entry corresponds to a function pointer.*/
@@ -84,9 +79,9 @@ class Profile
                              double *A,
                              int lda
                              );
-
-        static void ompt_initialize(ompt_function_lookup_t, const char*, unsigned int);
         
+        static void time_kernel(uint64_t kernel, uint64_t task_id);
+
         /* Captain! These can be replaced with an array of length TABLE_SIZE */
         void (*core[TABLE_SIZE])();
         static atomic<unsigned long> core_count[TABLE_SIZE];
@@ -94,22 +89,17 @@ class Profile
     /* functions  */
     protected:
 
-        static void ompt_control_cb(uint64_t kernel, uint64_t task_id);
         void kernel_to_file();
         void dump_files();
 
     /* variables  */
     protected:    
 
-        static map<string, map<ompt_task_id_t, class kernel_node*> > kernel_data;
+        static map<string, map<uint64_t, class kernel_node*> > kernel_data;
         static mutex kernel_mut;
         void *plasma_file;
         void *core_blas_file;
         
-        /*Function pointers*/
-        static ompt_get_thread_id_t get_thread_id_ptr;
-        static ompt_get_task_id_t get_task_id_ptr;
-        static ompt_get_parallel_id_t get_parallel_id_ptr;
         /* Delete below */
         core_dgemm_hook_type core_dgemm_hook;
         core_dsyrk_hook_type core_dsyrk_hook;

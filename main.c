@@ -51,7 +51,7 @@ int main (int argc, char *argv[])
   plasma_init();
 
   /*Multiply two triangular matrices*/
-  PLASMA_dgemm
+  plasma_dgemm
   (
    p 
   ,p
@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
   );
   
   /*Decompose the product with a Cholesky factorization*/
-  PLASMA_dpotrf
+  plasma_dpotrf
   (
    PlasmaUpper
   ,n

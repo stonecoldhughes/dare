@@ -23,7 +23,7 @@ extern "C" void core_dgemm(
 {
     int count = profile.core_count[CORE_DGEMM]++;
 
-    ompt_control((unsigned long)CORE_DGEMM, count);
+    profile.time_kernel((unsigned long)CORE_DGEMM, count);
 
     profile.call_core_dgemm(
                            transA,
@@ -41,7 +41,7 @@ extern "C" void core_dgemm(
                            ldc
                            );
     
-    ompt_control((unsigned long)CORE_DGEMM, count);
+    profile.time_kernel((unsigned long)CORE_DGEMM, count);
 
     return;
 }
@@ -61,7 +61,7 @@ extern "C" void core_dsyrk(
 {
     int count = profile.core_count[CORE_DSYRK]++;
 
-    ompt_control((unsigned long)CORE_DSYRK, count);
+    profile.time_kernel((unsigned long)CORE_DSYRK, count);
     
     ((core_dsyrk_hook_type)profile.core[CORE_DSYRK])(
                     uplo,
@@ -76,7 +76,7 @@ extern "C" void core_dsyrk(
                     ldc
                     );
 
-    ompt_control((unsigned long)CORE_DSYRK, count);
+    profile.time_kernel((unsigned long)CORE_DSYRK, count);
 
     return;
 }
@@ -97,7 +97,7 @@ extern "C" void core_dtrsm(
 {
     int count = profile.core_count[CORE_DTRSM]++;
 
-    ompt_control((unsigned long)CORE_DTRSM, count);
+    profile.time_kernel((unsigned long)CORE_DTRSM, count);
     
     profile.call_core_dtrsm(
                            side,
@@ -113,7 +113,7 @@ extern "C" void core_dtrsm(
                            ldb
                            );
 
-    ompt_control((unsigned long)CORE_DTRSM, count);
+    profile.time_kernel((unsigned long)CORE_DTRSM, count);
 
     return;
 }
@@ -127,7 +127,7 @@ extern "C" int core_dpotrf(
 {
     int count = profile.core_count[CORE_DPOTRF]++;
 
-    ompt_control((unsigned long)CORE_DPOTRF, count);
+    profile.time_kernel((unsigned long)CORE_DPOTRF, count);
 
     profile.call_core_dpotrf(
                             uplo,
@@ -136,7 +136,7 @@ extern "C" int core_dpotrf(
                             lda
                             );
 
-    ompt_control((unsigned long)CORE_DPOTRF, count);
+    profile.time_kernel((unsigned long)CORE_DPOTRF, count);
 
     return 0;
 }
