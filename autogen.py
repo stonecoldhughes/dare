@@ -1,4 +1,10 @@
+'''
+Code Improvement:
+    Standardize the tabbing by defining some space variables.
+    i.e., one_tab, two_tabs
+'''
 from pathlib import Path
+import argparse
 import sys
 import re
 
@@ -127,7 +133,6 @@ Profile::Profile()
     '''.format(c.name, c.name.upper()) \
                )
 
-    #Captain! Write the rest of the shit in here
     f.write( \
     '''
     /*set atomic counters*/
@@ -150,7 +155,61 @@ def arg_strip(string, spaces):
 
     return arg_str
 
-def write_hooks_cpp(f, core_kernel_list):
+def function_call(c, arg_str, spaces):
+    #Create the function call
+    if(c.rtype == 'void'):
+        call = '    (({0}_hook_type)profile.core[{1}])(\n'.format(c.name, c.name.upper())
+        spaces = (len(call) + 2) * ' '
+    else:
+        call = 'retval = (({0}_hook_type)profile.core[{1}])(\n'.format(c.name, c.name.upper())
+        spaces = (len(call) + 2) * ' '
+        call = '    {0} ret_val;\n\n'.format(c.rtype) + '    ' + call
+
+    call += arg_strip(arg_str, spaces) + spaces + ');'
+
+    return call
+
+#Captain! Add error checking here
+def wrap_from_file(f_string):
+    f = open(f_string, 'r')
+    f.close()
+    return ['    wrap_above()\n', '    wrap_below()\n']
+
+def wrap_call(c, call, cmd_args):
+    
+    #If the default behavior is invoked
+    if(cmd_args.wrapper == 'time_kernel'):
+        wrap_above = \
+        '''
+    int count = profile.core_count[{0}]++;
+
+    profile.time_kernel((unsigned long){0}, count);
+        '''.format(c.name.upper())
+
+        wrap_below = \
+        '''
+    profile.time_kernel((unsigned long){0}, count);
+        '''.format(c.name.upper())
+
+    #If the wrapper is specified in a file. Captain! Add configurability to this later
+    else:
+        wrap_sheet = wrap_from_file(cmd_args.wrapper)
+        wrap_above = wrap_sheet[0]
+        wrap_below = wrap_sheet[1]
+        
+    string = '{{\n{0}\n{1}\n{2}\n' \
+             .format(wrap_above, call, wrap_below)
+
+    if(c.rtype == 'void'):
+        string += '    return;\n}\n\n'
+    else:
+        string += '    return ret_val;\n}\n\n'
+
+    return string
+
+    
+def write_hooks_cpp(f, core_kernel_list, cmd_args):
+    #Write the top section
     f.write( \
     '''#include "profile.h"
 
@@ -161,47 +220,32 @@ using namespace std;
 ''' \
            )
 
+    #Write all the extern "C" kernels
     for c in core_kernel_list:
         string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
         spaces = (len(string) - 2) * ' '
         arg_str = breakup(c.args, spaces)
         string += arg_str + '\n' + spaces + ')\n'
 
-        #Create the function call
-        if(c.rtype == 'void'):
-            call = '(({0}_hook_type)profile.core[{1}])(\n'.format(c.name, c.name.upper())
-            spaces = (len(call) + 2) * ' '
-        else:
-            call = 'retval = (({0}_hook_type)profile.core[{1}])(\n'.format(c.name, c.name.upper())
-            spaces = (len(call) + 2) * ' '
-            call = '{0} ret_val;\n\n'.format(c.rtype) + '    ' + call
-
-        call += arg_strip(arg_str, spaces) + spaces + ');'
-        string += \
-        '''{{
-    int count = profile.core_count[{0}]++;
-
-    ompt_control((unsigned long){0}, count);
-    
-    {1}
-
-    ompt_control((unsigned long){0}, count);\n\n'''.format(c.name.upper(), call)
-
-        if(c.rtype == 'void'):
-            string += '    return;\n}\n\n'
-        else:
-            string += '    return ret_val;\n}\n\n'
-
+        call = function_call(c, arg_str, spaces)
+        string += wrap_call(c, call, cmd_args)
         f.write(string) 
+
+#Create an argument parser
+parser = argparse.ArgumentParser(description='Options for autogeneration')
+parser.add_argument('-d', '--dir', required=True)
+parser.add_argument('-w', '--wrapper', default='time_kernel')
+
+cmd_args = parser.parse_args()
 
 #Open autogen_types.h
 autogen_types_h = open('autogen_types.h', 'w')
 
 #Open files containing core_blas declarations
 file_string = ''
-file_pattern = r'core_blas_\w.h'
+file_pattern = r'core_blas_\w\.h'
 file_regex = re.compile(file_pattern)
-p = Path(sys.argv[1])
+p = Path(cmd_args.dir)
 for f in p.iterdir():
     if(f.is_file() and file_regex.fullmatch(f.name)):
         file_string += dump_file(str(f))
@@ -225,6 +269,6 @@ autogen_cpp.close()
 #Autogenerage the hooks.cpp file
 hooks_cpp = open('hooks.cpp', 'w')
 
-write_hooks_cpp(hooks_cpp, core_kernel_list)
+write_hooks_cpp(hooks_cpp, core_kernel_list, cmd_args)
 
 hooks_cpp.close()
