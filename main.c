@@ -31,7 +31,6 @@ int main (int argc, char *argv[])
   double *c;
   double one = 1.0;
   double zero = 0.0;
-  plasma_enum_t p = PlasmaNoTrans;
   int len_bytes;
 
   printf("enter n: ");
@@ -42,34 +41,34 @@ int main (int argc, char *argv[])
   a = (double *)malloc(len_bytes);
   gen(a, n);
   
-  b = (double *)malloc(len_bytes);
-  gen(b, n);
+  //b = (double *)malloc(len_bytes);
+  //gen(b, n);
   
   c = (double *)malloc(len_bytes);
-  gen(c, n);
+  //gen(c, n);
   
   plasma_init();
 
   /*Multiply two triangular matrices*/
   plasma_dgemm
   (
-   p 
-  ,p
+   PlasmaNoTrans 
+  ,PlasmaTrans
   ,n
   ,n
   ,n
   ,one
   ,a 
   ,n
-  ,b
+  ,a
   ,n
   ,zero
   ,c
   ,n
   );
-  
+
   /*Decompose the product with a Cholesky factorization*/
-  plasma_dpotrf
+  int r = plasma_dpotrf
   (
    PlasmaUpper
   ,n
@@ -83,6 +82,9 @@ int main (int argc, char *argv[])
   free(a);
   free(b);
   free(c);
+
+  /* check the return value */
+  printf("Cholesky returned %d\n", r);
 
   return 0;
 }

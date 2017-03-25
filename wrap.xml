@@ -8,13 +8,13 @@
     </wrap_above_args>
 
     <wrap_below_args>
-        <arg configurable = 'True' string = 'False'> color_list </arg>
+        <arg configurable = 'True' string = 'True'> color_list </arg>
     </wrap_below_args>
 
     <color_list>
-        <pair> <key> default </key> <value> 0xFFFF </value> </pair>
-        <pair> <key> core_dgemm </key> <value> 0xCCCC </value> </pair>
-        <pair> <key> core_dsyrk </key> <value> 0xAAAA </value> </pair>
+        <pair> <key> default </key> <value> 0xEE82EE </value> </pair>
+        <pair> <key> core_dgemm </key> <value> 0x00FFFF </value> </pair>
+        <pair> <key> core_dsyrk </key> <value> 0xFFC0CB </value> </pair>
     </color_list>
     
 </config>

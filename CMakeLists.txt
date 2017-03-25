@@ -2,31 +2,35 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
 set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
 
 #Check value of variable and if it isn't set, comment something to the user
-if(NOT DEFINED PLASMA_INCLUDE)
-    message(FATAL_ERROR "Run CMake with -DPLASMA_INCLUDE=/example/path")
+if(NOT DEFINED PLASMA_DIR)
+    message(FATAL_ERROR "Run CMake with -DPLASMA_DIR=/example/path")
 else()
-    message(STATUS "PLASMA_INCLUDE=${PLASMA_INCLUDE}")
+    message(STATUS "PLASMA_DIR=${PLASMA_DIR}")
+endif()
+
+#Captain! This is kind of a hack to invoke default behavior
+if(NOT DEFINED WRAPPER_CONFIG)
+    set(WRAPPER_CONFIG time_kernel)
 endif()
 
 project(optimize C CXX)
 
 #/Users/hhughe11/plasma/include is plasma include directory
 include_directories(
-                   ${PLASMA_INCLUDE}
+                   ${PLASMA_DIR}/include
                    )
 
-#Add a DEPENDS clause in this command so it builds if any of the files in plasma.h change
-#Test it out by changing shit and seeing what it does
-#add_custom_command(
-#                  OUTPUT autogen_prelim.cpp
- #                 COMMAND python hello.py ${PLASMA_INCLUDE}
-  #                DEPENDS ${PLASMA_INCLUDE}
-   #               )
+add_custom_command(
+                  OUTPUT autogen_types.h autogen.cpp hooks.cpp
+                  COMMAND python autogen.py -d ${PLASMA_DIR} -w ${WRAPPER_CONFIG}
+                  DEPENDS ${PLASMA_DIR/include}
+                  )
 
 add_executable(main main.c)
 
 add_library(
            profile_lib SHARED 
+           /Users/hhughe11/plasma/tools/trace.cpp
            hooks.cpp
            autogen.cpp
            profile.cpp 
