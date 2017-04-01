@@ -1,0 +1,22 @@
+<config>
+
+    <wrap_above_func> 
+        <name> trace_cpu_start </name>
+    </wrap_above_func>
+    
+    <wrap_below_func> 
+        <name> trace_cpu_stop </name>
+        <args>
+            <arg configurable = 'True' string = 'True'> color_list </arg>
+        </args>
+    </wrap_below_func>
+
+    <use_default kernel_colors = 'color_list'> 1 </use_default>
+
+    <color_list>
+        <pair> <key> default </key> <value> "0xEE82EE" </value> </pair>
+        <pair> <key> core_dgemm </key> <value> "0x00FFFF" </value> </pair>
+        <pair> <key> core_dsyrk </key> <value> "0xFFC0CB" </value> </pair>
+    </color_list>
+    
+</config>
