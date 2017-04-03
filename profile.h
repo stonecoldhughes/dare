@@ -7,7 +7,6 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "autogen_types.h"
-#include "plasma_trace.h"
 
 using namespace std;
 
