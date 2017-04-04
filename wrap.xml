@@ -2,6 +2,8 @@
 
     <wrap_above_func> 
         <name> trace_cpu_start </name>
+        <file_extension> .cpp </file_extension>
+        <declaration> void trace_cpu_start() </declaration>
     </wrap_above_func>
     
     <wrap_below_func> 
@@ -9,6 +11,8 @@
         <args>
             <arg configurable = 'True' string = 'True'> color_list </arg>
         </args>
+        <file_extension> .cpp </file_extension>
+        <declaration> void trace_cpu_stop(const char *) </declaration>
     </wrap_below_func>
 
     <use_default kernel_colors = 'color_list'> 1 </use_default>
