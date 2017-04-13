@@ -469,8 +469,9 @@ def include_directories(cmd_args):
     spaces = (len(start)-2) * ' '
     end = ')'
     between = spaces + cmd_args.dir + '/include' + '\n'
-    for d in cmd_args.include:
-        between += spaces + d + '\n'
+    if(cmd_args.include != None):
+        for d in cmd_args.include:
+            between += spaces + d + '\n'
     return start + between + spaces + end
 
 #Start of main code
