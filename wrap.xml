@@ -15,7 +15,7 @@
         <declaration> void trace_cpu_stop(const char *) </declaration>
     </wrap_below_func>
 
-    <use_default kernel_colors = 'color_list'> 0 </use_default>
+    <use_default kernel_colors = 'color_list'> 1 </use_default>
 
     <color_list>
         <pair> <key> default </key> <value> "0xEE82EE" </value> </pair>

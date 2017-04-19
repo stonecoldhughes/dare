@@ -11,9 +11,10 @@ mutex Profile::kernel_mut;
 
 Profile::~Profile()
 {
-    dump_files();
-
-    dlclose(plasma_file);
+    if(default_output)
+    {
+        dump_files();
+    }
 
     return;
 }
@@ -31,8 +32,6 @@ void Profile::kernel_to_file()
     map<string, map<uint64_t, struct kernel_node*> >::iterator iter1;
     map<uint64_t, struct kernel_node*>::iterator iter2;
 
-    /*Data must be appended to files after consecutive "plasma_init()" "plasma_finalize()" 
-    invokation pairs*/
     if(append)
     {
         file = fopen("kernel_data.txt", "a");
@@ -70,118 +69,6 @@ void Profile::kernel_to_file()
     fclose(file);
 
     kernel_data.clear();
-
-    return;
-}
-
-void Profile::call_core_dgemm(
-                        plasma_enum_t transA,
-                        plasma_enum_t transB,
-                        int m,
-                        int n,
-                        int k,
-                        double alpha,
-                        const double *A,
-                        int lda,
-                        const double *B,
-                        int ldb,
-                        double beta,
-                        double *C,
-                        int ldc
-                        )
-{
-    (*core_dgemm_hook)(
-                      transA,
-                      transB,
-                      m,
-                      n,
-                      k,
-                      alpha,
-                      A,
-                      lda,
-                      B,
-                      ldb,
-                      beta,
-                      C,
-                      ldc
-                      );
-
-    return;
-}
-
-void Profile::call_core_dsyrk(
-                             plasma_enum_t uplo,
-                             plasma_enum_t trans,
-                             int n,
-                             int k,
-                             double alpha,
-                             const double *A,
-                             int lda,
-                             double beta,
-                             double *C,
-                             int ldc
-                             )
-{
-    (*core_dsyrk_hook)(
-                      uplo,
-                      trans,
-                      n,
-                      k,
-                      alpha,
-                      A,
-                      lda,
-                      beta,
-                      C,
-                      ldc
-                      );
-
-    return;
-}
-
-void Profile::call_core_dtrsm(
-                             plasma_enum_t side,
-                             plasma_enum_t uplo,
-                             plasma_enum_t transA,
-                             plasma_enum_t diag,
-                             int m,
-                             int n,
-                             double alpha,
-                             const double *A,
-                             int lda,
-                             double *B,
-                             int ldb
-                             )
-{
-    (*core_dtrsm_hook)(
-                      side,
-                      uplo,
-                      transA,
-                      diag,
-                      m,
-                      n,
-                      alpha,
-                      A,
-                      lda,
-                      B,
-                      ldb
-                      );
-    return;
-}
-
-
-void Profile::call_core_dpotrf(
-                              plasma_enum_t uplo,
-                              int n,
-                              double *A,
-                              int lda
-                              )
-{
-    (*core_dpotrf_hook)(
-                       uplo,
-                       n,
-                       A,
-                       lda
-                       );
 
     return;
 }
