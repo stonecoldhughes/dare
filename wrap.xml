@@ -22,5 +22,20 @@
         <pair> <key> core_dgemm </key> <value> "0x00FFFF" </value> </pair>
         <pair> <key> core_dsyrk </key> <value> "0xFFC0CB" </value> </pair>
     </color_list>
+
+    <plasma_dir> /Users/hhughe11/research/plasma </plasma_dir>
+
+    <include_dirs>
+    <dir> /Users/hhughe11/research/plasma/include </dir>
+    <dir> /Users/hhughe11/research </dir>
+    </include_dirs>
+
+    <trace_h>
+    <h> /Users/hhughe11/research/plasma_trace.h </h>
+    </trace_h>
+
+    <trace_c>
+    <c> /Users/hhughe11/research/trace.c </c>
+    </trace_c>
     
 </config>

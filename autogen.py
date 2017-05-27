@@ -56,7 +56,10 @@ class config_class:
                  below_decl, \
                  use_default, \
                  default_color_map, \
-                 trace_h \
+                 plasma_dir, \
+                 include_dirs, \
+                 trace_h, \
+                 trace_c \
                  ):
         self.wrap_above_func = above_func
         self.wrap_below_func = below_func
@@ -69,6 +72,10 @@ class config_class:
         self.above_decl = above_decl
         self.below_filex = below_filex
         self.below_decl = below_decl
+        self.plasma_dir = plasma_dir
+        self.include_dirs = include_dirs
+        self.trace_h = trace_h
+        self.trace_c = trace_c
 
 def list_args(args, root):
     #Each configurable arg has a set of possible choices it could be.
@@ -133,14 +140,15 @@ def name_and_args(tag, root):
     else:
         return None
 
-def parse_config(cmd_args):
+def parse_config(wrapper):
 
-    tree = xml.parse(cmd_args.wrapper)
+    tree = xml.parse(wrapper)
 
     root = tree.getroot()
 
     default_color_map = {}
 
+    #Determine whether or not to use default
     use_default_tag = root.find('use_default')
     if(use_default_tag != None):
         if(int(use_default_tag.text.strip()) == 1):
@@ -156,6 +164,7 @@ def parse_config(cmd_args):
         use_default = False
     
     
+    #Obtain the calling conventions for the wrapper functions
     if(use_default == False):
         wrap_below_func = name_and_args(root.find('wrap_below_func'), root)
         wrap_above_func = name_and_args(root.find('wrap_above_func'), root)
@@ -164,6 +173,18 @@ def parse_config(cmd_args):
         wrap_below_func = wrap_func('', [], '', '')
         wrap_above_func = wrap_func('', [], '', '')
     
+    #Obtain the top-level directory for PLASMA
+    plasma_dir = root.find('plasma_dir').text.strip()
+
+    #Obtain the include directories for PLASMA
+    include_dirs = root.find('include_dirs').findall('dir')
+
+    #Obtain the list of .h files for the tracing wrappers
+    trace_h = root.find('trace_h').findall('h')
+
+    #Obtain the list of .c or .cpp files for the tracing wrappers
+    trace_c = root.find('trace_c').findall('c')
+
     c = config_class(\
                     wrap_above_func.name, \
                     wrap_above_func.arg_list, \
@@ -175,7 +196,10 @@ def parse_config(cmd_args):
                     wrap_below_func.decl, \
                     use_default, \
                     default_color_map, \
-                    cmd_args.trace_h \
+                    plasma_dir, \
+                    include_dirs, \
+                    trace_h, \
+                    trace_c \
                     )
         
     return c
@@ -253,14 +277,13 @@ def write_header(f, core_kernel_list):
     #Next, write function hook typedefs
     write_typedefs(f, core_kernel_list)
 
-def parse_hdr(hdr_file_string, cmd_args):
+def parse_hdr(hdr_file_string):
     core_kernel_list = {}
 
     matches = rgx_obj.core_regex.finditer(hdr_file_string)
 
     for m in matches:
 
-        #core_kernel_list.append(core_class(m.group(1), m.group(2), m.group(3)))
         if(m.group(2) not in core_kernel_list):
             core_kernel_list[m.group(2)] = core_class(m.group(1), m.group(2), m.group(3))
 
@@ -289,7 +312,7 @@ Profile::Profile()
     /* Obtain a handle to the core_blas library */
     core_blas_file = dlopen("{prefix}libcoreblas.so", RTLD_LAZY);
     if(core_blas_file == NULL) {{printf("core_blas_file null\\n"); exit(0);}}
-    '''.format(prefix = cmd_args.dir + '/lib/', default_flag = use_default) \
+    '''.format(prefix = config.plasma_dir + '/lib/', default_flag = use_default) \
     )
 
     for c in core_kernel_list.values():
@@ -449,7 +472,7 @@ def write_hooks_cpp(f, core_kernel_list, config):
         string += wrap_the_call(c, call, config)
         f.write(string) 
 
-def cmake_add_library(cmd_args):
+def cmake_add_library(config):
 
     start = '''add_library(
                           profile_lib SHARED'''
@@ -463,22 +486,23 @@ def cmake_add_library(cmd_args):
     spaces = len('add_library') * ' '
     
     trace_files = ''
-    if(cmd_args.trace_c):
-        for f in cmd_args.trace_c:
-            trace_files += spaces + f + '\n'
+    if(config.trace_c):
+        for f in config.trace_c:
+            trace_files += spaces + f.text.strip() + '\n'
 
     call = start + '\n' + trace_files + spaces + end
 
     return call
 
-def include_directories(cmd_args):
+#Captain! You might need to do a .text.strip() on each element of include_dirs
+def include_directories(config):
     start = 'include_directories(' + '\n'
     spaces = (len(start)-2) * ' '
     end = ')'
-    between = spaces + cmd_args.dir + '/include' + '\n'
-    if(cmd_args.include != None):
-        for d in cmd_args.include:
-            between += spaces + d + '\n'
+    between = spaces + config.plasma_dir + '/include' + '\n'
+    if(config.include_dirs != None):
+        for d in config.include_dirs:
+            between += spaces + d.text.strip() + '\n'
     return start + between + spaces + end
 
 #Start of main code
@@ -486,13 +510,9 @@ def include_directories(cmd_args):
 #Create an argument parser
 parser = argparse.ArgumentParser(description='Create a CMakeLists.txt file and run CMake for PLASMA Tracer')
 
-parser.add_argument('-d', '--dir', help = 'Specify the PLASMA directory', required = True)
 parser.add_argument('-w', '--wrapper', help = 'Specify the XML wrapper config file', required = True)
-parser.add_argument('-i', '--include', help = 'Specify the directories containing the .h file for the two tracer functions', nargs = '*')
-parser.add_argument('-c', '--trace_c', help = 'Specify a list of .c/.cpp files to compile the two trace functions', nargs = '*')
-parser.add_argument('-r', '--trace_h', help = 'Specify which header files in the included directories are needed', nargs = '*')
 
-cmd_args = parser.parse_args()
+config = parse_config(parser.parse_args().wrapper)
 
 #Open autogen_types.h
 autogen_types_h = open('autogen_types.h', 'w')
@@ -502,15 +522,13 @@ rgx_obj = rgx_obj_class()
 
 #Open files containing core_blas declarations
 hdr_file_string = ''
-p = Path(cmd_args.dir + '/include')
+p = Path(config.plasma_dir + '/include')
 for f in p.iterdir():
     if(f.is_file() and rgx_obj.file_regex.fullmatch(f.name)):
         hdr_file_string += dump_file(str(f))
 
 #Create kernel list
-core_kernel_list = parse_hdr(hdr_file_string, cmd_args)
-
-config = parse_config(cmd_args)
+core_kernel_list = parse_hdr(hdr_file_string)
 
 #All header files are concatenated into the same string. Header is written in one pass.
 write_header(autogen_types_h, core_kernel_list)
@@ -552,7 +570,7 @@ target_link_libraries(
                      -flat_namespace
                      -g
                      )
-""".format(include_dirs = include_directories(cmd_args), plasma_dir = cmd_args.dir, add_library = cmake_add_library(cmd_args))
+""".format(include_dirs = include_directories(config), plasma_dir = config.plasma_dir, add_library = cmake_add_library(config))
 )
 
 cmake_lists.close()
