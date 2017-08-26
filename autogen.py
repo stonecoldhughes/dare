@@ -296,14 +296,12 @@ def write_autogen_cpp(f, core_kernel_list, config):
         use_default = 'false'
 
     f.write( \
-    '''#include "profile.h"
+    '''#include "dare_base.h"
 
 using namespace std;
 
-atomic<unsigned long> Profile::core_count[TABLE_SIZE];
-
 /*This will obtain function pointers to hooks in the PLASMA library*/
-Profile::Profile()
+dare_base::dare_base()
 {{
     void (*fptr)();
 
@@ -481,6 +479,7 @@ def cmake_add_library(config):
            hooks.cpp
            autogen.cpp
            profile.cpp
+           dare_base.cpp
            )'''
     
     spaces = len('add_library') * ' '
