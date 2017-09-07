@@ -56,10 +56,6 @@ class config_class:
                  below_decl, \
                  use_default, \
                  default_color_map, \
-                 plasma_dir, \
-                 include_dirs, \
-                 trace_h, \
-                 trace_c \
                  ):
         self.wrap_above_func = above_func
         self.wrap_below_func = below_func
@@ -67,15 +63,10 @@ class config_class:
         self.above_arg_list = above_args
         self.use_default = use_default
         self.default_color_map = default_color_map
-        self.trace_h = trace_h
         self.above_filex = above_filex
         self.above_decl = above_decl
         self.below_filex = below_filex
         self.below_decl = below_decl
-        self.plasma_dir = plasma_dir
-        self.include_dirs = include_dirs
-        self.trace_h = trace_h
-        self.trace_c = trace_c
 
 def list_args(args, root):
     #Each configurable arg has a set of possible choices it could be.
@@ -140,50 +131,43 @@ def name_and_args(tag, root):
     else:
         return None
 
-def parse_config(wrapper):
-
-    tree = xml.parse(wrapper)
-
-    root = tree.getroot()
-
+def default_colors(root, use_default_tag):
+    
     default_color_map = {}
 
-    #Determine whether or not to use default
+    color_str = use_default_tag.get('kernel_colors')
+    
+    pairs = root.find(color_str).findall('pair')
+    
+    for pair in pairs:
+        
+        val_str = pair.find('value').text.strip()
+        
+        default_color_map[pair.find('key').text.strip()] = val_str
+
+    return default_color_map
+
+def trace_config(root):
+    
+    #Determine whether or not to use default behavior
     use_default_tag = root.find('use_default')
     if(use_default_tag != None):
         if(int(use_default_tag.text.strip()) == 1):
             use_default = True
-            color_str = use_default_tag.get('kernel_colors')
-            pairs = root.find(color_str).findall('pair')
-            for pair in pairs:
-                val_str = pair.find('value').text.strip()
-                default_color_map[pair.find('key').text.strip()] = val_str
         else:
             use_default = False
     else:
         use_default = False
-    
-    
+
     #Obtain the calling conventions for the wrapper functions
     if(use_default == False):
         wrap_below_func = name_and_args(root.find('wrap_below_func'), root)
         wrap_above_func = name_and_args(root.find('wrap_above_func'), root)
         default_color_map = {}
     else:
+        default_color_map = default_colors(root, use_default_tag)
         wrap_below_func = wrap_func('', [], '', '')
         wrap_above_func = wrap_func('', [], '', '')
-    
-    #Obtain the top-level directory for PLASMA
-    plasma_dir = root.find('plasma_dir').text.strip()
-
-    #Obtain the include directories for PLASMA
-    include_dirs = root.find('include_dirs').findall('dir')
-
-    #Obtain the list of .h files for the tracing wrappers
-    trace_h = root.find('trace_h').findall('h')
-
-    #Obtain the list of .c or .cpp files for the tracing wrappers
-    trace_c = root.find('trace_c').findall('c')
 
     c = config_class(\
                     wrap_above_func.name, \
@@ -196,10 +180,6 @@ def parse_config(wrapper):
                     wrap_below_func.decl, \
                     use_default, \
                     default_color_map, \
-                    plasma_dir, \
-                    include_dirs, \
-                    trace_h, \
-                    trace_c \
                     )
         
     return c
@@ -244,7 +224,6 @@ def dump_file(string):
     return file_string
 
 def write_typedefs(f, core_kernel_list):
-    #Captain! Is this bad practice?
     ckl = list(core_kernel_list.values())
     for i in range(0, len(ckl)-1):
         hook_str = 'typedef ' \
@@ -289,12 +268,23 @@ def parse_hdr(hdr_file_string):
 
     return core_kernel_list
     
-def write_autogen_cpp(f, core_kernel_list, config):
-    if(config.use_default == True):
-        use_default = 'true'
+def write_autogen_cpp(f, core_kernel_list, root, mode_str):
+    
+    #Check for default case
+    use_default_tag = root.find('use_default')
+    
+    if(use_default_tag != None):
+        if(int(use_default_tag.text.strip()) == 1):
+            use_default = True
+        else:
+            use_default = False
     else:
-        use_default = 'false'
-
+        use_default = False
+    
+    #Obtain the top-level directory for PLASMA
+    plasma_dir = root.find('plasma_dir').text.strip()
+    
+    #Write the constructor
     f.write( \
     '''#include "dare_base.h"
 
@@ -305,12 +295,14 @@ dare_base::dare_base()
 {{
     void (*fptr)();
 
-    default_output = {default_flag};
-
     /* Obtain a handle to the core_blas library */
-    core_blas_file = dlopen("{prefix}libcoreblas.so", RTLD_LAZY);
+    core_blas_file = dlopen(
+                            "{prefix}libcoreblas.so", 
+                            RTLD_LAZY
+                           );
+
     if(core_blas_file == NULL) {{printf("core_blas_file null\\n"); exit(0);}}
-    '''.format(prefix = config.plasma_dir + '/lib/', default_flag = use_default) \
+    '''.format(prefix = plasma_dir + '/lib/', ) \
     )
 
     for c in core_kernel_list.values():
@@ -334,6 +326,34 @@ dare_base::dare_base()
     return;
 }''' \
            )
+
+    #write the destructor. It must call kernel_to_file if default behavior
+    #is invoked in trace mode
+    f.write( \
+    '''
+    dare_base::~dare_base()
+    {
+    ''' \
+    )
+
+    if(mode_str  == 'trace'):
+        
+        f.write( \
+        '''
+    if(default_output)
+    {
+        kernel_to_file();
+    }
+        ''' \
+        )
+
+    f.write(\
+    '''
+    return;
+
+    }
+    ''' \
+    )
 
 def arg_strip(string, spaces):
     matches = list(rgx_obj.arg_regex.finditer(string))
@@ -436,13 +456,17 @@ def wrap_the_call(c, call, config):
     return string
 
 def trace_header(config): 
+
+    #Obtain the list of .h files for the tracing wrappers
+    trace_h = root.find('trace_h').findall('h')
+
     start = '#include "profile.h"'
 
     between = ''
     #If it's a .cpp file, just include the header files
     if(config.above_filex == '.cpp' and config.below_filex == '.cpp'):
         between += '\n'
-        for h in config.trace_h:
+        for h in trace_h:
             between += '#include "{h_file}"\n'.format(h_file = h)
 
     #If it's a .c file, you have to declare the trace functions as extern
@@ -455,22 +479,30 @@ def trace_header(config):
 
     return start + '\n' + between + '\n' + end
 
-def write_hooks_cpp(f, core_kernel_list, config):
-    #Write the top section
-    f.write(trace_header(config))
+def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
-    #Write all the extern "C" kernels
-    for c in core_kernel_list.values():
-        string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
-        spaces = (len(string) - 2) * ' '
-        arg_str = breakup(c.args, spaces)
-        string += arg_str + '\n' + spaces + ')\n'
+    if(mode_str == 'trace'):
+        
+        config = trace_config(root)
 
-        call = function_call(c, arg_str)
-        string += wrap_the_call(c, call, config)
-        f.write(string) 
+        #Write the top section
+        f.write(trace_header(config))
 
-def cmake_add_library(config):
+        #Write all the extern "C" kernels
+        for c in core_kernel_list.values():
+            string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
+            spaces = (len(string) - 2) * ' '
+            arg_str = breakup(c.args, spaces)
+            string += arg_str + '\n' + spaces + ')\n'
+
+            call = function_call(c, arg_str)
+            string += wrap_the_call(c, call, config)
+            f.write(string) 
+
+def cmake_add_library(root):
+
+    #Obtain the list of .c or .cpp files for the tracing wrappers
+    trace_c = root.find('trace_c').findall('c')
 
     start = '''add_library(
                           profile_lib SHARED'''
@@ -485,33 +517,70 @@ def cmake_add_library(config):
     spaces = len('add_library') * ' '
     
     trace_files = ''
-    if(config.trace_c):
-        for f in config.trace_c:
+    if(trace_c):
+        for f in trace_c:
             trace_files += spaces + f.text.strip() + '\n'
 
     call = start + '\n' + trace_files + spaces + end
 
     return call
 
-#Captain! You might need to do a .text.strip() on each element of include_dirs
-def include_directories(config):
+def include_directories(root):
+    
+    #Obtain the top-level directory for PLASMA
+    plasma_dir = root.find('plasma_dir').text.strip()
+
+    #Obtain the include directories for PLASMA
+    include_dirs = root.find('include_dirs').findall('dir')
+
     start = 'include_directories(' + '\n'
     spaces = (len(start)-2) * ' '
     end = ')'
-    between = spaces + config.plasma_dir + '/include' + '\n'
-    if(config.include_dirs != None):
-        for d in config.include_dirs:
+    between = spaces + plasma_dir + '/include' + '\n'
+    if(include_dirs != None):
+        for d in include_dirs:
             between += spaces + d.text.strip() + '\n'
     return start + between + spaces + end
+
+def write_cmake_lists(cmake_lists, root):
+    
+
+    #Open files containing core_blas declarations
+    plasma_dir = root.find('plasma_dir').text.strip()
+
+    cmake_lists.write(
+    """set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
+    set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
+        
+    {include_dirs}
+
+    project(optimize C CXX)
+
+    {add_library}
+
+    target_link_libraries(
+                         profile_lib
+                         {plasma_dir}/lib/libcoreblas.so
+                         {plasma_dir}/lib/libplasma.so
+                         -fopenmp
+                         -flat_namespace
+                         -g
+                         )
+    """.format(include_dirs = include_directories(root), \
+        plasma_dir = plasma_dir, \
+        add_library = cmake_add_library(root)))
+
 
 #Start of main code
 
 #Create an argument parser
 parser = argparse.ArgumentParser(description='Create a CMakeLists.txt file and run CMake for PLASMA Tracer')
 
-parser.add_argument('-w', '--wrapper', help = 'Specify the XML wrapper config file', required = True)
+parser.add_argument('-c', '--config', help = 'Specify the XML config file', required = True)
 
-config = parse_config(parser.parse_args().wrapper)
+tree = xml.parse(parser.parse_args().config)
+
+root = tree.getroot()
 
 #Open autogen_types.h
 autogen_types_h = open('autogen_types.h', 'w')
@@ -520,14 +589,27 @@ autogen_types_h = open('autogen_types.h', 'w')
 rgx_obj = rgx_obj_class()
 
 #Open files containing core_blas declarations
+plasma_dir = root.find('plasma_dir').text.strip()
 hdr_file_string = ''
-p = Path(config.plasma_dir + '/include')
+p = Path(plasma_dir + '/include')
 for f in p.iterdir():
     if(f.is_file() and rgx_obj.file_regex.fullmatch(f.name)):
         hdr_file_string += dump_file(str(f))
 
 #Create kernel list
 core_kernel_list = parse_hdr(hdr_file_string)
+
+#Determine operating mode
+mode_tag = root.find('mode')
+if(mode_tag != None):
+
+    mode_str = mode_tag.text.strip()
+
+else:
+
+    print("No mode tag found. Exiting.")
+    
+    sys.exit()
 
 #All header files are concatenated into the same string. Header is written in one pass.
 write_header(autogen_types_h, core_kernel_list)
@@ -538,41 +620,25 @@ autogen_types_h.close()
 #Create autogenerated cpp file
 autogen_cpp = open('autogen.cpp', 'w')
 
-write_autogen_cpp(autogen_cpp, core_kernel_list, config)
+write_autogen_cpp(autogen_cpp, core_kernel_list, root, mode_str)
 
 autogen_cpp.close()
 
-#Autogenerage the hooks.cpp file
+#Autogenerate the hooks.cpp file
 hooks_cpp = open('hooks.cpp', 'w')
 
-write_hooks_cpp(hooks_cpp, core_kernel_list, config)
+#Captain! You are here, trying to add autotuning functionality
+write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str)
 
 hooks_cpp.close()
 
+#Autogenerate the CMakeLists.txt file
 cmake_lists = open('CMakeLists.txt', 'w')
 
-cmake_lists.write(
-"""set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
-set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
-    
-{include_dirs}
-
-project(optimize C CXX)
-
-{add_library}
-
-target_link_libraries(
-                     profile_lib
-                     {plasma_dir}/lib/libcoreblas.so
-                     {plasma_dir}/lib/libplasma.so
-                     -fopenmp
-                     -flat_namespace
-                     -g
-                     )
-""".format(include_dirs = include_directories(config), plasma_dir = config.plasma_dir, add_library = cmake_add_library(config))
-)
+write_cmake_lists(cmake_lists, root)
 
 cmake_lists.close()
 
 subprocess.run(['cmake', '.'])
+
 subprocess.run(['make'])

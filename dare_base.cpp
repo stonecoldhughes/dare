@@ -4,16 +4,6 @@ extern bool append;
 
 using namespace std;
 
-dare_base::~dare_base()
-{
-    if(default_output)
-    {
-        kernel_to_file();
-    }
-
-    return;
-}
-
 void dare_base::kernel_to_file()
 {
     FILE *file;
