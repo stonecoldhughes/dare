@@ -16,7 +16,6 @@ class kernel_node
         double t_start;
         double t_end; 
         uint64_t task_id;
-        /* Captain! Is this right? */
         uint64_t thread_id;
         string kernel;
 };
@@ -46,7 +45,7 @@ class dare_base
         void kernel_to_file();
 
         /* Whether or not the tracer is set to the default case. Change to an enum later */
-        bool default_output;
+        int default_output;
     
         /* Contains a kernel_node class for each kernel invocation */
         map<string, map<uint64_t, class kernel_node*> > kernel_data;

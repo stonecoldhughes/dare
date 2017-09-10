@@ -15,6 +15,15 @@ cpp_includes = '#include "profile.h"\n' \
 
 four_space = '    '
 
+autotune_header_str = \
+'''
+#include "profile.h"
+
+extern class Profile profile;
+
+using namespace std;
+'''
+
 class core_class:
     
     def __init__(self, rtype, name, args):
@@ -153,14 +162,14 @@ def trace_config(root):
     use_default_tag = root.find('use_default')
     if(use_default_tag != None):
         if(int(use_default_tag.text.strip()) == 1):
-            use_default = True
+            use_default = 1
         else:
-            use_default = False
+            use_default = 0
     else:
-        use_default = False
+        use_default = 0
 
     #Obtain the calling conventions for the wrapper functions
-    if(use_default == False):
+    if(use_default == 0):
         wrap_below_func = name_and_args(root.find('wrap_below_func'), root)
         wrap_above_func = name_and_args(root.find('wrap_above_func'), root)
         default_color_map = {}
@@ -275,11 +284,11 @@ def write_autogen_cpp(f, core_kernel_list, root, mode_str):
     
     if(use_default_tag != None):
         if(int(use_default_tag.text.strip()) == 1):
-            use_default = True
+            use_default = 1
         else:
-            use_default = False
+            use_default = 0 
     else:
-        use_default = False
+        use_default = 0 
     
     #Obtain the top-level directory for PLASMA
     plasma_dir = root.find('plasma_dir').text.strip()
@@ -295,6 +304,9 @@ dare_base::dare_base()
 {{
     void (*fptr)();
 
+    /* Set the default output flag */
+    default_output = {default_output};
+
     /* Obtain a handle to the core_blas library */
     core_blas_file = dlopen(
                             "{prefix}libcoreblas.so", 
@@ -302,7 +314,7 @@ dare_base::dare_base()
                            );
 
     if(core_blas_file == NULL) {{printf("core_blas_file null\\n"); exit(0);}}
-    '''.format(prefix = plasma_dir + '/lib/', ) \
+    '''.format(prefix = plasma_dir + '/lib/', default_output = use_default) \
     )
 
     for c in core_kernel_list.values():
@@ -324,136 +336,216 @@ dare_base::dare_base()
     }
     
     return;
-}''' \
+}
+''' \
            )
 
     #write the destructor. It must call kernel_to_file if default behavior
     #is invoked in trace mode
     f.write( \
     '''
-    dare_base::~dare_base()
-    {
-    ''' \
-    )
-
-    if(mode_str  == 'trace'):
-        
-        f.write( \
-        '''
+dare_base::~dare_base()
+{
     if(default_output)
     {
         kernel_to_file();
     }
-        ''' \
-        )
 
-    f.write(\
-    '''
     return;
-
-    }
-    ''' \
+}''' \
     )
 
 def arg_strip(string, spaces):
+
     matches = list(rgx_obj.arg_regex.finditer(string))
+
     arg_str = ''
+    
     for i in range(0, len(matches)):
+        
         arg_str += (spaces + matches[i].group(2) + '\n')
 
     return arg_str
 
-def function_call(c, arg_str):
+def function_call(c, arg_str, spaces):
+    
     #Create the function call
-    if(c.rtype == 'void'):
-        call = four_space + '(({0}_hook_type)profile.core[{1}])(\n'.format(c.name, c.name.upper())
-        spaces = (len(call) + 2) * ' '
-    else:
-        call = 'ret_val = (({0}_hook_type)profile.core[{1}])(\n'.format(c.name, c.name.upper())
-        spaces = (len(call) + 2) * ' '
-        call = four_space + '{0} ret_val;\n\n'.format(c.rtype) + four_space + call
+    
+    arg_spaces = ''
 
-    call += arg_strip(arg_str, spaces) + spaces + ');'
+    if(c.rtype == 'void'):
+        
+        call = '{sp}(({name}_hook_type)profile.core[{upper}])(\n'\
+        .format(sp = spaces, name = c.name, upper = c.name.upper())
+        
+        spaces = (len(call) + 2) * ' '
+    
+    else:
+        
+        call = '{sp}ret_val = (({name}_hook_type)profile.core[{upper}])(\n'\
+        .format(sp = spaces, name = c.name, upper = c.name.upper())
+        
+        arg_spaces = (len(call) + 2) * ' '
+        
+        #Captain! Remove this line
+        #call = four_space + '{0} ret_val;\n\n'.format(c.rtype) + four_space + call
+
+    call += arg_strip(arg_str, arg_spaces) + arg_spaces + ');'
 
     return call
 
 def gen_wrapper(c, config):
+    
     if(config.wrap_above_func != ''):
+        
         wrap_above = four_space + config.wrap_above_func + '('
+        
         if(config.above_arg_list):
+            
             for i in range(0, len(config.above_arg_list) - 1):
+                
                 d = config.above_arg_list[i]
+                
                 if(c.name in d):
+                    
                     name = d[c.name]
+                
                 else:
+                    
                     name = d['default']
+                
                 wrap_above += name + ', '
 
             d = config.above_arg_list[-1]
+            
             if(c.name in d):
+                
                 name = d[c.name]
             else:
+                
                 name = d['default']
+            
             wrap_above += name + ')'
 
         else:
+            
             wrap_above += ')'
     else:
+        
         wrap_above = ''
     
     if(config.wrap_below_func):
+        
         wrap_below = four_space + config.wrap_below_func + '('
+        
         if(config.below_arg_list):
+            
             for i in range(0, len(config.below_arg_list) - 1):
+                
                 d = config.below_arg_list[i]
+                
                 if(c.name in d):
+                    
                     name = d[c.name]
+                
                 else:
+                   
                     name = d['default']
+                
                 wrap_below += name + ', '
 
             d = config.below_arg_list[-1]
+            
             if(c.name in d):
+                
                 name = d[c.name]
+            
             else:
+                
                 name = d['default']
+            
             wrap_below += name + ')'
+        
         else:
+            
             wrap_below += ')'
     else:
+        
         wrap_below = ''
 
     return wrap_class(wrap_above, wrap_below)
 
-def wrap_the_call(c, call, config):
+def profile_wrap(c, spaces):
+        
+    wrap_above = '''int count = profile.core_count[{name}]++;
+
+    {sp}profile.time_kernel((unsigned long){name}, count)'''\
+    .format(sp = spaces, name = c.name.upper())
+
+    wrap_below = \
+    '''
+    {sp}profile.time_kernel((unsigned long){name}, count)'''\
+    .format(sp = spaces, name = c.name.upper())
+
+    wrap = wrap_class(wrap_above, wrap_below)
+
+    return wrap
+
+def trace_wrap_call(c, call, config):
     
     #If the default behavior is invoked
-    if(config.use_default == True):
-        wrap_above = \
-        '''
-    int count = profile.core_count[{0}]++;
-
-    profile.time_kernel((unsigned long){0}, count)'''.format(c.name.upper())
-
-        wrap_below = \
-        '''
-    profile.time_kernel((unsigned long){0}, count)'''.format(c.name.upper())
-
-        wrap = wrap_class(wrap_above, wrap_below)
-
+    if(config.use_default == 1):
+        
+        wrap = profile_wrap(c, four_space)
+    
     #Customize the wrapper for each kernel
     else:
+
         wrap = gen_wrapper(c, config)
         
-    string = '{{\n{0};\n{1}\n{2};\n' \
+    string = '\n{0};\n\n{1}\n{2};\n' \
              .format(wrap.above, call, wrap.below)
 
-    if(c.rtype == 'void'):
-        string += ('\n' + four_space + 'return;\n}\n\n')
-    else:
-        string += ('\n' + four_space + 'return ret_val;\n}\n\n')
+    return string
+
+def autotune_wrap_call(c, call, root):
+
+    wrap = profile_wrap(c, four_space)
+
+    #Function call enclosed in default profile-class timing wrappers
+    inner = '{0};\n\n{1}\n{2};\n' \
+             .format(wrap.above, call, wrap.below)
+
+    #Get the kernel fraction and stride
+    kf_tag = root.find('kernel_fraction')
+
+    if(kf_tag == None):
+        
+        print('kernel_fraction tag not found.')
+
+        sys.exit()
+
+    ratio = kf_tag.text.strip().split(':')
+
+    kernel_run = int(ratio[0])
+
+    kernel_stride = int(ratio[1])
+
+    #Enclose "inner" within autotune conditional
+    string = '''\
+    int random_n = rand() % {stride} + 1;
+
+    if(random_n <= {run})
+    {{
+        {inside_conditional}
+    }}
+    '''.format(stride = kernel_stride, \
+               run = kernel_run, \
+               inside_conditional = inner \
+              )
 
     return string
+
 
 def trace_header(config): 
 
@@ -463,15 +555,23 @@ def trace_header(config):
     start = '#include "profile.h"'
 
     between = ''
+    
     #If it's a .cpp file, just include the header files
     if(config.above_filex == '.cpp' and config.below_filex == '.cpp'):
+        
         between += '\n'
+        
         for h in trace_h:
+        
             between += '#include "{h_file}"\n'.format(h_file = h)
 
     #If it's a .c file, you have to declare the trace functions as extern
     if(config.above_filex == '.c' and config.below_filex == '.c'):
+        
+        between += '\n'
+        
         between += 'extern "C" {decl};\n'.format(decl = config.above_decl)
+        
         between += 'extern "C" {decl};\n'.format(decl = config.below_decl)
 
     end = 'extern class Profile profile;' + '\n\n' \
@@ -483,26 +583,59 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
     if(mode_str == 'trace'):
         
+        print('trace mode')
+
         config = trace_config(root)
 
-        #Write the top section
         f.write(trace_header(config))
 
-        #Write all the extern "C" kernels
-        for c in core_kernel_list.values():
-            string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
-            spaces = (len(string) - 2) * ' '
-            arg_str = breakup(c.args, spaces)
-            string += arg_str + '\n' + spaces + ')\n'
+    elif(mode_str == 'autotune'):
 
-            call = function_call(c, arg_str)
-            string += wrap_the_call(c, call, config)
-            f.write(string) 
+        print('autotune mode')
+
+        f.write(autotune_header_str)
+
+    #Write all the extern "C" kernels. Same for both trace and autotune mode.
+    for c in core_kernel_list.values():
+        
+        #The hook definition
+        string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
+        
+        spaces = (len(string) - 2) * ' '
+        
+        arg_str = breakup(c.args, spaces)
+        
+        string += arg_str + '\n' + spaces + ')\n{\n'
+
+        if(c.rtype != 'void'):
+            
+            #call = four_space + '{0} ret_val;\n\n'.format(c.rtype) + four_space + call
+            string += four_space + '{type} ret_val;\n\n'.format(type = c.rtype)
+
+        #The actual function call within the hook
+        call = function_call(c, arg_str, four_space)
+
+        #Wrap the call in trace wrappers
+        if(mode_str == 'trace'):
+
+            string += trace_wrap_call(c, call, config)
+
+        elif(mode_str == 'autotune'):
+
+            string += autotune_wrap_call(c, call, root)
+
+        #Conclude the function body with the proper return statement and bracket
+        if(c.rtype == 'void'):
+            
+            string += ('\n' + four_space + 'return;\n}\n\n')
+        
+        else:
+            
+            string += ('\n' + four_space + 'return ret_val;\n}\n\n')
+
+        f.write(string)
 
 def cmake_add_library(root):
-
-    #Obtain the list of .c or .cpp files for the tracing wrappers
-    trace_c = root.find('trace_c').findall('c')
 
     start = '''add_library(
                           profile_lib SHARED'''
@@ -516,9 +649,17 @@ def cmake_add_library(root):
     
     spaces = len('add_library') * ' '
     
+    #Obtain the list of .c or .cpp files for the tracing wrappers
+    trace_c_tag = root.find('trace_c')
+
     trace_files = ''
-    if(trace_c):
+
+    if(trace_c_tag):
+        
+        trace_c = trace_c_tag.findall('c')
+        
         for f in trace_c:
+            
             trace_files += spaces + f.text.strip() + '\n'
 
     call = start + '\n' + trace_files + spaces + end
@@ -528,18 +669,29 @@ def cmake_add_library(root):
 def include_directories(root):
     
     #Obtain the top-level directory for PLASMA
-    plasma_dir = root.find('plasma_dir').text.strip()
+    plasma_dir_tag = root.find('plasma_dir')
 
-    #Obtain the include directories for PLASMA
-    include_dirs = root.find('include_dirs').findall('dir')
+    if(plasma_dir_tag != None):
 
-    start = 'include_directories(' + '\n'
-    spaces = (len(start)-2) * ' '
-    end = ')'
-    between = spaces + plasma_dir + '/include' + '\n'
-    if(include_dirs != None):
-        for d in include_dirs:
-            between += spaces + d.text.strip() + '\n'
+        plasma_dir = plasma_dir_tag.text.strip()
+
+        #Obtain the include directories for PLASMA
+        include_dirs = root.find('include_dirs').findall('dir')
+
+        start = 'include_directories(' + '\n'
+        
+        spaces = (len(start)-2) * ' '
+        
+        end = ')'
+        
+        between = spaces + plasma_dir + '/include' + '\n'
+        
+        if(include_dirs != None):
+            
+            for d in include_dirs:
+             
+                between += spaces + d.text.strip() + '\n'
+
     return start + between + spaces + end
 
 def write_cmake_lists(cmake_lists, root):
@@ -590,10 +742,15 @@ rgx_obj = rgx_obj_class()
 
 #Open files containing core_blas declarations
 plasma_dir = root.find('plasma_dir').text.strip()
+
 hdr_file_string = ''
+
 p = Path(plasma_dir + '/include')
+
 for f in p.iterdir():
+    
     if(f.is_file() and rgx_obj.file_regex.fullmatch(f.name)):
+        
         hdr_file_string += dump_file(str(f))
 
 #Create kernel list
@@ -601,6 +758,7 @@ core_kernel_list = parse_hdr(hdr_file_string)
 
 #Determine operating mode
 mode_tag = root.find('mode')
+
 if(mode_tag != None):
 
     mode_str = mode_tag.text.strip()
@@ -627,7 +785,6 @@ autogen_cpp.close()
 #Autogenerate the hooks.cpp file
 hooks_cpp = open('hooks.cpp', 'w')
 
-#Captain! You are here, trying to add autotuning functionality
 write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str)
 
 hooks_cpp.close()
