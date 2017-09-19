@@ -256,11 +256,15 @@ def write_typedefs(f, core_kernel_list):
     f.write(hook_str)
 
 def write_header(f, core_kernel_list):
+
     #Write header
     f.write(header_includes)
 
     #Write lookup tables
     write_lookup_tables(f, core_kernel_list)
+
+    #Write plasma_init hook typedef
+    f.write('typedef int (*plasma_init_hook_type)();\n\n')
 
     #Next, write function hook typedefs
     write_typedefs(f, core_kernel_list)
@@ -304,6 +308,8 @@ dare_base::dare_base()
 {{
     void (*fptr)();
 
+    void *plasma_file;
+
     /* Set the default output flag */
     default_output = {default_output};
 
@@ -314,6 +320,19 @@ dare_base::dare_base()
                            );
 
     if(core_blas_file == NULL) {{printf("core_blas_file null\\n"); exit(0);}}
+    
+    /* Obtain a handle to the plasma library */
+    plasma_file = dlopen(
+                        "{prefix}libplasma.so",
+                        RTLD_LAZY
+                        );
+
+    if(plasma_file == NULL) {{printf("plasma_file null\\n"); exit(0);}}
+
+    /* hook plasma_init() */
+    fptr = (void (*)())dlsym(plasma_file, "plasma_init");
+    if(fptr == NULL) {{printf("plasma_init() hook NULL\\n"); exit(0);}}
+    plasma_init_ptr = fptr;
     '''.format(prefix = plasma_dir + '/lib/', default_output = use_default) \
     )
 
@@ -387,9 +406,6 @@ def function_call(c, arg_str, spaces):
         
         arg_spaces = (len(call) + 2) * ' '
         
-        #Captain! Remove this line
-        #call = four_space + '{0} ret_val;\n\n'.format(c.rtype) + four_space + call
-
     call += arg_strip(arg_str, arg_spaces) + arg_spaces + ');'
 
     return call
@@ -579,6 +595,109 @@ def trace_header(config):
 
     return start + '\n' + between + '\n' + end
 
+def plasma_init_hook(root):
+
+    tag = root.find('tile_size')
+
+    tile_size = ''
+
+    if(tag != None):
+        
+        tile_size = tag.text.strip()
+    
+    else:
+        
+        print('No tile size specified in config file')
+        
+        sys.exit()
+
+    if(tile_size == 'stdin'):
+
+        plasma_init_str = \
+'''\
+#include "profile.h"
+#include <sstream>
+#include <iostream>
+#include <string>
+
+extern class Profile profile;
+
+using namespace std;
+
+extern "C" int plasma_init()
+{
+    int ret_val;
+
+    int tile_size;
+    
+    string input;
+    
+    string tag;
+    
+    stringstream ss;
+
+    ret_val = ((plasma_init_hook_type)profile.plasma_init_ptr)();
+
+    getline(cin, input);
+
+    ss.str(input);
+
+    ss >> tag;
+    
+    if(tag == "tile_size")
+    {
+        ss >> tile_size;
+        
+        plasma_set(PlasmaNb, tile_size);
+
+        plasma_get(PlasmaNb, &tile_size);
+
+        printf("Tile size successfully set to %d\\n", tile_size);
+    }
+
+    else
+    {
+        printf(
+              "unrecognized or missing label on stdin.\\n"
+              "should be: tile_size <value>\\n"
+              );
+    }
+
+    return ret_val;
+}
+
+'''
+    else:
+
+        plasma_init_str = \
+'''\
+#include "profile.h"
+
+extern class Profile profile;
+
+using namespace std;
+
+extern "C" int plasma_init()
+{{
+    int ret_val;
+
+    int tile_size;
+
+    ret_val = ((plasma_init_hook_type)profile.plasma_init_ptr)();
+
+    plasma_set(PlasmaNb, {tile_size_arg});
+
+    plasma_get(PlasmaNb, &tile_size);
+
+    printf("Tile size successfully set to %d\\n", tile_size);
+
+    return ret_val;
+}}
+
+'''.format(tile_size_arg = tile_size)
+    
+    return plasma_init_str
+
 def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
     if(mode_str == 'trace'):
@@ -593,7 +712,8 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
         print('autotune mode')
 
-        f.write(autotune_header_str)
+    #Captain! Put in the plasma_init() hook here
+    f.write(plasma_init_hook(root))
 
     #Write all the extern "C" kernels. Same for both trace and autotune mode.
     for c in core_kernel_list.values():
@@ -610,7 +730,7 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
         if(c.rtype != 'void'):
             
             #call = four_space + '{0} ret_val;\n\n'.format(c.rtype) + four_space + call
-            string += four_space + '{type} ret_val;\n\n'.format(type = c.rtype)
+            string += four_space + '{data_type} ret_val;\n\n'.format(data_type = c.rtype)
 
         #The actual function call within the hook
         call = function_call(c, arg_str, four_space)

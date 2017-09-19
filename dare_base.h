@@ -38,6 +38,9 @@ class dare_base
         /* The location where the core_blas symbols can be read from */
         void *core_blas_file;
 
+        /* The location where plasma symbols can be read from */
+        void (*plasma_init_ptr)();
+
     /* functions */
     protected:
         

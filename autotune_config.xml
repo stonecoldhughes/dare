@@ -3,7 +3,7 @@
     <use_default> 1 </use_default>
     <kernel_fraction> 1:10 </kernel_fraction>
     <plasma_dir> /Users/hhughe11/research/plasma </plasma_dir>
-    
+    <tile_size> 256 </tile_size>    
     <include_dirs>
     <dir> /Users/hhughe11/research/plasma/include </dir>
     </include_dirs>
