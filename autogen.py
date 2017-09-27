@@ -1,3 +1,7 @@
+#For autotune mode, stdin arguments must be in the format:
+#num_args kernel_fraction 10:100 tile_size 128 (for example)
+#use_stdin must be indicated in the config file.
+#all arguments that use stdin must say "stdin" as their text field
 import xml.etree.ElementTree as xml
 import subprocess
 from pathlib import Path
@@ -16,8 +20,7 @@ cpp_includes = '#include "profile.h"\n' \
 four_space = '    '
 
 autotune_header_str = \
-'''
-#include "profile.h"
+'''#include "profile.h"
 
 extern class Profile profile;
 
@@ -524,6 +527,8 @@ def trace_wrap_call(c, call, config):
 
     return string
 
+#Captain! This searches the root tag every time
+#That is atrocious programming. Fix it
 def autotune_wrap_call(c, call, root):
 
     wrap = profile_wrap(c, four_space)
@@ -532,33 +537,15 @@ def autotune_wrap_call(c, call, root):
     inner = '{0};\n\n{1}\n{2};\n' \
              .format(wrap.above, call, wrap.below)
 
-    #Get the kernel fraction and stride
-    kf_tag = root.find('kernel_fraction')
-
-    if(kf_tag == None):
-        
-        print('kernel_fraction tag not found.')
-
-        sys.exit()
-
-    ratio = kf_tag.text.strip().split(':')
-
-    kernel_run = int(ratio[0])
-
-    kernel_stride = int(ratio[1])
-
     #Enclose "inner" within autotune conditional
     string = '''\
-    int random_n = rand() % {stride} + 1;
+    int random_n = rand() % profile.kernel_stride + 1;
 
-    if(random_n <= {run})
+    if(random_n <= profile.kernel_run)
     {{
         {inside_conditional}
     }}
-    '''.format(stride = kernel_stride, \
-               run = kernel_run, \
-               inside_conditional = inner \
-              )
+    '''.format(inside_conditional = inner)
 
     return string
 
@@ -595,30 +582,88 @@ def trace_header(config):
 
     return start + '\n' + between + '\n' + end
 
-def plasma_init_hook(root):
-
-    tag = root.find('tile_size')
-
-    tile_size = ''
-
-    if(tag != None):
-        
-        tile_size = tag.text.strip()
+def stdin_version():
     
-    else:
-        
-        print('No tile size specified in config file')
-        
-        sys.exit()
-
-    if(tile_size == 'stdin'):
-
-        plasma_init_str = \
-'''\
+    string = \
+'''
 #include "profile.h"
 #include <sstream>
 #include <iostream>
 #include <string>
+
+extern class Profile profile;
+
+using namespace std;
+
+/* Obtains variable number of arguments from stdin */
+void parse_stdin()
+{
+    int num_args;
+
+    string input;
+
+    string tag;
+
+    string kfrac;
+
+    stringstream ss;
+
+    getline(cin, input);
+
+    ss.str(input);
+
+    ss >> num_args;
+
+    for(int i = 0; i < num_args; ++i)
+    {
+        ss >> tag;
+
+        if(tag == "tile_size")
+        {
+            ss >> profile.tile_size;
+        }
+
+        else if(tag == "kernel_fraction")
+        {
+            ss >> kfrac;
+
+            int colon = kfrac.find(':');
+
+            profile.kernel_run = atoi(kfrac.substr(0, colon).c_str());
+
+            profile.kernel_stride = atoi(kfrac.substr(colon + 1).c_str());
+        }
+
+        else
+        {
+            printf("unrecognized stdin data tag\\n");
+
+            exit(0);
+        }
+    }
+
+    return;
+}
+
+extern "C" int plasma_init()
+{
+    int ret_val;
+
+    int tile_size;
+    
+    ret_val = ((plasma_init_hook_type)profile.plasma_init_ptr)();
+
+    /* get arguments from stdin. Not here if there aren't any */
+    parse_stdin();
+
+'''
+    return string
+
+def no_stdin_version():
+    
+    string = \
+'''
+#include "profile.h"
 
 extern class Profile profile;
 
@@ -630,72 +675,89 @@ extern "C" int plasma_init()
 
     int tile_size;
     
-    string input;
-    
-    string tag;
-    
-    stringstream ss;
-
     ret_val = ((plasma_init_hook_type)profile.plasma_init_ptr)();
+'''
 
-    getline(cin, input);
+    return string
 
-    ss.str(input);
+def last_half(root):
 
-    ss >> tag;
+    tile_size = root.find('tile_size').text.strip()
+
+    plasma_init_str = ''
+
+    if(tile_size != 'stdin'):
+
+        plasma_init_str = 'profile.tile_size = {ts};\n'\
+                           .format(ts = tile_size)
+
+    kf = root.find('kernel_fraction').text.strip()
+
+    if(kf != 'stdin'):
+
+        ratio = kf.split(':')
     
-    if(tag == "tile_size")
-    {
-        ss >> tile_size;
+        kernel_run = int(ratio[0])
+
+        kernel_stride = int(ratio[1])
+
+        plasma_init_str += \
+        '''
+        profile.kernel_run = {krun};
+
+        profile_kernel_stride = {kstride};
         
-        plasma_set(PlasmaNb, tile_size);
+        '''.format(krun = kernel_run, kstride = kernel_stride)
 
-        plasma_get(PlasmaNb, &tile_size);
+    plasma_init_str += \
+    '''
+    plasma_set(PlasmaNb, profile.tile_size);
 
-        printf("Tile size successfully set to %d\\n", tile_size);
-    }
+    plasma_get(PlasmaNb, &tile_size);
 
-    else
-    {
-        printf(
-              "unrecognized or missing label on stdin.\\n"
-              "should be: tile_size <value>\\n"
-              );
-    }
+    printf(
+          "tile_size: %d kernel_run: %d kernel_stride: %d\\n",
+          tile_size, profile.kernel_run, profile.kernel_stride
+          );
 
     return ret_val;
 }
 
 '''
+    return plasma_init_str
+
+def plasma_init_hook(root):
+
+    stdin_tag = root.find('use_stdin')
+
+    if(stdin_tag != None):
+        
+        stdin_str = int(stdin_tag.text.strip())
+
+        if(stdin_str == 1):
+            
+            plasma_init_str = stdin_version()
+
+            plasma_init_str += last_half(root)
+
+
+        elif(stdin_str == 0):
+            
+            plasma_init_str = no_stdin_version()
+
+            plasma_init_str += last_half(root)
+
+        else:
+            
+            print('stdin_str must be 1 or 0')
+
+            sys.exit()
     else:
+        
+        plasma_init_str = no_stdin_version()
 
-        plasma_init_str = \
-'''\
-#include "profile.h"
+        plasma_init_str += last_half(root)
 
-extern class Profile profile;
-
-using namespace std;
-
-extern "C" int plasma_init()
-{{
-    int ret_val;
-
-    int tile_size;
-
-    ret_val = ((plasma_init_hook_type)profile.plasma_init_ptr)();
-
-    plasma_set(PlasmaNb, {tile_size_arg});
-
-    plasma_get(PlasmaNb, &tile_size);
-
-    printf("Tile size successfully set to %d\\n", tile_size);
-
-    return ret_val;
-}}
-
-'''.format(tile_size_arg = tile_size)
-    
     return plasma_init_str
 
 def write_hooks_cpp(f, core_kernel_list, root, mode_str):
@@ -712,8 +774,7 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
         print('autotune mode')
 
-    #Captain! Put in the plasma_init() hook here
-    f.write(plasma_init_hook(root))
+        f.write(plasma_init_hook(root))
 
     #Write all the extern "C" kernels. Same for both trace and autotune mode.
     for c in core_kernel_list.values():
@@ -848,7 +909,7 @@ def write_cmake_lists(cmake_lists, root):
 #Create an argument parser
 parser = argparse.ArgumentParser(description='Create a CMakeLists.txt file and run CMake for PLASMA Tracer')
 
-parser.add_argument('-c', '--config', help = 'Specify the XML config file', required = True)
+parser.add_argument('-c', '--config', help = 'Specify the XML config file', required = True, encoding = 'utf-8')
 
 tree = xml.parse(parser.parse_args().config)
 
