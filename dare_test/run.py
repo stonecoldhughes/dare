@@ -1,10 +1,104 @@
-#Script to test your research
 import argparse
 import subprocess
 import sys
 import time
+import matplotlib.pyplot as plt
+import numpy as np
 
-def dump_point_data(xdata, ydata):
+#Global variable indicating how many strings are needed to run dgemm_dpotrf.
+#One for command line variables, one for stdin
+n_dgemm_dpotrf_arg_strings = 2
+
+#Also have an "analyze_data" function where you do the gradients and such
+#Plot the points. Assume each line has the same x values
+def plot_point_data(xdata, ydata, line_labels):
+
+    n_lines = len(xdata)
+    
+    legend_graph, legend_axis = plt.subplots()
+
+    graph, axis = plt.subplots()
+
+    ymax = -1
+
+    ymin = sys.maxsize
+
+    xmax = -1
+
+    xmin = sys.maxsize
+    
+    #Plot each line on the same graph
+    for i in range (0, n_lines):
+        
+        ylist = ydata[i]
+
+        y = max(ylist)
+
+        if(y > ymax):
+            
+            ymax = y
+        
+        y = min(ylist)
+        
+        if(y < ymin):
+
+            ymin = y
+    
+        #Grab "m" only
+        xlist = [t[0] for t in xdata[i]]
+
+        x = max(xlist)
+
+        if(x > xmax):
+
+            xmax = x
+
+        x = min(xlist)
+
+        if(x < xmin):
+
+            xmin = x
+        
+        
+        print('line {i}: xlist: {x} ylist: {y}'.format(i = i, \
+                                                       x = xlist, \
+                                                       y = ylist))
+
+        #Captain! Generate the label somehow. Make the first element a label
+        #string and put that at the front of each set of line points?
+        axis.plot(
+                 xlist, \
+                 ylist, \
+                 linestyle = '-', \
+                 marker = '.', \
+                 )
+
+
+        #Plot the legend in a seperate graph
+        legend_axis.plot(
+                        [], \
+                        [], \
+                        label = line_labels[i]
+                        )
+
+    #Put a buffer on the min and max
+    axis.set_xlim(xmin - 10, xmax + 10)
+
+    axis.set_ylim(ymin - 10, ymax + 10)
+
+    axis.set_title("Performance Characteristics")
+
+    #Show the legend in a seperate graph
+    legend = legend_axis.legend(
+                               loc = 'center', \
+                               ncol = 2, \
+                               fontsize = 'xx-large' \
+                               )
+
+    plt.show()
+
+#Print out the data points you collected
+def dump_point_data(xdata, ydata, line_labels):
 
     total_lines = len(xdata)
 
@@ -19,6 +113,8 @@ def dump_point_data(xdata, ydata):
         ylist = ydata[i]
 
         n_points = len(xlist)
+
+        print('line label: {label}'.format(label = line_labels[i]))
 
         for j in range(0, n_points):
 
@@ -51,6 +147,8 @@ xdata = []
 
 ydata = []
 
+line_labels = []
+
 #Tests a dgemm followed by a cholesky
 if(executable == './dgemm_dpotrf'):
 
@@ -71,10 +169,15 @@ if(executable == './dgemm_dpotrf'):
     #The first line of the file says how many data points are in each line
     n_points = int(lines[0])
 
+    #Number of lines of text in the config file that describe a line in the graph
+    #2 lines are required to run the dgemm_dpotrf program
+    line_chunk = n_points * n_dgemm_dpotrf_arg_strings + 1
+
     #Captain! Don't forget to get an overhead run
-    for i in range (1, len(lines), n_points * 2):
+    print('i in range(1, {len_lines}, {line_chunk})'.format(len_lines = len(lines), line_chunk = line_chunk))
+    for i in range (1, len(lines), line_chunk):
         
-        print("new line!")
+        print('at {i} in config file'.format(i = i))
 
         xdata.append([])
 
@@ -84,11 +187,15 @@ if(executable == './dgemm_dpotrf'):
 
         ylist = ydata[-1]
 
-        for j in range (0, n_points * 2, 2):
+        #The first line of every line_chunk is the label
+        line_labels.append(lines[i])
 
-            cmd_args = lines[i+j].split(' ')
+        #Get the point data lines and run
+        for j in range (i+1, i+line_chunk, 2):
 
-            stdin_args = lines[i+j+1].encode('utf-8')
+            cmd_args = lines[j].split(' ')
+
+            stdin_args = lines[j+1].encode('utf-8')
             
             t1 = time.perf_counter()
 
@@ -98,16 +205,18 @@ if(executable == './dgemm_dpotrf'):
                                 stdout = subprocess.PIPE, \
                                 )
 
-            #Should t1 be here to avoid overhead?
+            #Captain! Should t1 be here to avoid overhead?
             out = p.communicate(stdin_args)
 
             t2 = time.perf_counter()
 
             #tuple contains m, n
-            xlist.append((cmd_args[1], cmd_args[3]))
+            xlist.append((int(cmd_args[1]), int(cmd_args[3])))
 
             ylist.append(t2 - t1)
 
             print(out[0].decode('utf-8'))
 
-    dump_point_data(xdata, ydata)
+    dump_point_data(xdata, ydata, line_labels)
+
+    plot_point_data(xdata, ydata, line_labels)

@@ -909,7 +909,9 @@ def write_cmake_lists(cmake_lists, root):
 #Create an argument parser
 parser = argparse.ArgumentParser(description='Create a CMakeLists.txt file and run CMake for PLASMA Tracer')
 
-parser.add_argument('-c', '--config', help = 'Specify the XML config file', required = True, encoding = 'utf-8')
+parser.add_argument('-c', '--config', \
+                    help = 'Specify the XML config file', \
+                    required = True)
 
 tree = xml.parse(parser.parse_args().config)
 
