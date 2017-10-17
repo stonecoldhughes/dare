@@ -1,0 +1,19 @@
+4
+Line 1
+./dgemm_dpotrf 1000 1000 1000 1000 10 -1
+2 kernel_fraction 50:50 tile_size 128
+./dgemm_dpotrf 500 100 500 100 10 -1
+2 kernel_fraction 50:1000 tile_size 512
+./dgemm_dpotrf 50 1000 50 1000 10 -1
+2 kernel_fraction 25:50 tile_size 128
+./dgemm_dpotrf 500 500 50 500 10 -1
+2 kernel_fraction 5:1000 tile_size 256
+Line 2
+./dgemm_dpotrf 1000 1000 1000 1000 10 -1
+2 kernel_fraction 50:50 tile_size 128
+./dgemm_dpotrf 500 100 500 100 10 -1
+2 kernel_fraction 50:1000 tile_size 512
+./dgemm_dpotrf 50 1000 50 1000 10 -1
+2 kernel_fraction 25:50 tile_size 128
+./dgemm_dpotrf 500 500 50 500 10 -1
+2 kernel_fraction 5:1000 tile_size 256
