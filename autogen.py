@@ -2,6 +2,7 @@
 #num_args kernel_fraction 10:100 tile_size 128 (for example)
 #use_stdin must be indicated in the config file.
 #all arguments that use stdin must say "stdin" as their text field
+#in the config file
 import xml.etree.ElementTree as xml
 import subprocess
 from pathlib import Path
@@ -818,6 +819,15 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
 def cmake_add_library(root):
 
+    use_default_tag = root.find('use_default')
+    if(use_default_tag != None):
+        if(int(use_default_tag.text.strip()) == 1):
+            use_default = 1
+        else:
+            use_default = 0
+    else:
+        use_default = 0
+
     start = '''add_library(
                           profile_lib SHARED'''
 
@@ -830,18 +840,20 @@ def cmake_add_library(root):
     
     spaces = len('add_library') * ' '
     
-    #Obtain the list of .c or .cpp files for the tracing wrappers
-    trace_c_tag = root.find('trace_c')
-
     trace_files = ''
 
-    if(trace_c_tag):
-        
-        trace_c = trace_c_tag.findall('c')
-        
-        for f in trace_c:
+    if(use_default == 0):
+
+        #Obtain the list of .c or .cpp files for the tracing wrappers
+        trace_c_tag = root.find('trace_c')
+
+        if(trace_c_tag):
             
-            trace_files += spaces + f.text.strip() + '\n'
+            trace_c = trace_c_tag.findall('c')
+            
+            for f in trace_c:
+                
+                trace_files += spaces + f.text.strip() + '\n'
 
     call = start + '\n' + trace_files + spaces + end
 
@@ -896,7 +908,6 @@ def write_cmake_lists(cmake_lists, root):
                          {plasma_dir}/lib/libcoreblas.so
                          {plasma_dir}/lib/libplasma.so
                          -fopenmp
-                         -flat_namespace
                          -g
                          )
     """.format(include_dirs = include_directories(root), \

@@ -90,20 +90,14 @@ int main (int argc, char *argv[])
   /* Main testing loop */
   for(i = 0; i < iterations; ++i)
   {
-    if(m_add != 0)
-    {
-        m = dim_rand(m_low, m_add);
+    if(m_add != 0) m = dim_rand(m_low, m_add);
+    
+    else m = m_total;
 
-        n = dim_rand(n_low, n_add);
-    }
-
-    else
-    {
-        m = m_total;
-
-        n = n_total;
-    }
-
+    if(n_add != 0) n = dim_rand(n_low, n_add);
+    
+    else n = n_total;
+    
     if(PRINT)
     {
         printf("running with m = %d, n = %d\n", m, n);

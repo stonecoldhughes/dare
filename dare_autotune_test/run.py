@@ -44,7 +44,7 @@ def plot_point_data(xdata, ydata, line_labels):
 
             ymin = y
     
-        #Grab "m" only
+        #xdata[i] is a list of (m, n) tuples. You only want "m"
         xlist = [t[0] for t in xdata[i]]
 
         x = max(xlist)
@@ -60,9 +60,14 @@ def plot_point_data(xdata, ydata, line_labels):
             xmin = x
         
         
-        print('line {i}: xlist: {x} ylist: {y}'.format(i = i, \
-                                                       x = xlist, \
-                                                       y = ylist))
+        print('line {i}:\n xlist: {x}\n ylist: {y}\n' + \
+              'xmax: {xma} ymax: {yma}\n xmin: {xmi} ymin: {ymi}'.format(i = i, \
+                                             x = xlist, \
+                                             y = ylist, \
+                                             xma = xmax, \
+                                             yma = ymax, \
+                                             xmi = xmin, \
+                                             ymi = ymin))
 
         #Captain! Generate the label somehow. Make the first element a label
         #string and put that at the front of each set of line points?
@@ -87,6 +92,10 @@ def plot_point_data(xdata, ydata, line_labels):
     axis.set_ylim(ymin - 10, ymax + 10)
 
     axis.set_title("Performance Characteristics")
+
+    axis.set_xlabel('m')
+
+    axis.set_ylabel('time')
 
     #Show the legend in a seperate graph
     legend = legend_axis.legend(
