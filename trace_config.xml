@@ -17,7 +17,7 @@
         <declaration> void trace_cpu_stop(const char *) </declaration>
     </wrap_below_func>
 
-    <use_default kernel_colors = 'color_list'> 1 </use_default>
+    <use_default kernel_colors = 'color_list'> 0 </use_default>
 
     <color_list>
         <pair> <key> default </key> <value> "Purple" </value> </pair>
@@ -30,16 +30,16 @@
     <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
 
     <include_dirs>
-    <dir> /Users/hhughe11/research </dir>
+    <dir> /Users/hhughe11/research/dare </dir>
     <dir> /opt/intel/mkl/include </dir>
     </include_dirs>
 
     <trace_h>
-    <h> /Users/hhughe11/research/plasma_trace.h </h>
+    <h> /Users/hhughe11/research/dare/plasma_trace.h </h>
     </trace_h>
 
     <trace_c>
-    <c> /Users/hhughe11/research/trace.c </c>
+    <c> /Users/hhughe11/research/dare/trace.c </c>
     </trace_c>
     
 </config>
