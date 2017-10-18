@@ -29,6 +29,9 @@
 
     <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
 
+    <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>
+    <cpp_compiler> /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0 </cpp_compiler>
+
     <include_dirs>
     <dir> /Users/hhughe11/research/dare </dir>
     <dir> /opt/intel/mkl/include </dir>

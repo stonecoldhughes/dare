@@ -893,9 +893,13 @@ def write_cmake_lists(cmake_lists, root):
     #Open files containing core_blas declarations
     plasma_dir = root.find('plasma_dir').text.strip()
 
+    cpp_compiler = root.find('cpp_compiler').text.strip()
+
+    c_compiler = root.find('c_compiler').text.strip()
+
     cmake_lists.write(
-    """set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
-    set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
+    """set(CMAKE_CXX_COMPILER {cpp})
+    set(CMAKE_C_COMPILER {c})
         
     {include_dirs}
 
@@ -912,7 +916,9 @@ def write_cmake_lists(cmake_lists, root):
                          )
     """.format(include_dirs = include_directories(root), \
         plasma_dir = plasma_dir, \
-        add_library = cmake_add_library(root)))
+        add_library = cmake_add_library(root), \
+        c = c_compiler, \
+        cpp = cpp_compiler))
 
 
 #Start of main code
