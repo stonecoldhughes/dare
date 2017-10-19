@@ -26,5 +26,4 @@ target_link_libraries(
                      ${PLASMA_DIR}/lib/libplasma.so
                      ${PLASMA_DIR}/lib/libcoreblas.so
                      -Wl,-rpath,${PLASMA_DIR}/lib
-                     -ggdb
                      )

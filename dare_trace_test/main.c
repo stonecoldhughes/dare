@@ -5,10 +5,92 @@
 #include "fcntl.h"
 
 #define ELEMENT_MAX 256
+#define BOTTOM_ROW_MAX 10
 #define PRINT 1
 
+void print_matrix(double *matrix, int n)
+{
+    int i;
+    int j;
 
+    printf("matrix:\n");
+
+    for(i = 0; i < n; ++i)
+    {
+        for(j = 0; j < n; ++j)
+        {
+            printf(" %4.0lf", matrix[ i * n + j ]);
+        }
+
+        printf("\n");
+    }
+
+    printf("\n");
+
+    return;
+}
+
+double row_prod(double *m, int r, int c, int n)
+{
+    double prod = 0;
+    int i;
+    int r_offset = r * n;
+    int c_offset = c * n;
+    int min = c < r ? c : r;
+
+    for(i = 0; i <= min; ++i)
+    {
+        prod += (m[r_offset + i] * m[c_offset + i]);
+    }
+
+    return prod;
+}
+
+/* generate a Hermitian, positive-definite matrix to Cholesky factorize */
 void gen_hermitian(double *matrix, int n)
+{
+    double *tmp = malloc(n * n * sizeof(double)); 
+    int i;
+    int j;
+    
+    /* create a lower triangular matrix in tmp */
+    for(i = 0; i < n; ++i)
+    {
+        /* 
+        Maximum value for row i. This formula keeps the matrix values
+        somewhat well conditioned
+        */
+        int max_value = n / (i + 1) * BOTTOM_ROW_MAX;
+        int row_offset = i * n;
+
+        for(j = 0; j <= i; ++j)
+        {
+            tmp[ row_offset + j ] = (double)(rand() % max_value + 1);
+        }
+    }
+
+    /* Multiply the matrix by its transpose and store in "matrix" */
+    for(i = 0; i < n; ++i)
+    {
+        for(j = 0; j < n; ++j)
+        {
+           matrix[ i * n + j ] = row_prod(tmp, i, j, n); 
+        }
+    }
+    
+    /* test */
+    printf("triangular:\n");
+    print_matrix(tmp, n);
+
+    printf("Hermitian positive definite:\n");
+    print_matrix(matrix, n);
+    
+    free(tmp);
+
+    return;
+}
+
+void gen_symmetric(double *matrix, int n)
 {
     int i;
     int j;
@@ -26,24 +108,6 @@ void gen_hermitian(double *matrix, int n)
 
             else matrix[i * n + j] = matrix[j * n + i];
         }
-    }
-
-    return;
-}
-
-void print_matrix(double *matrix, int n)
-{
-    int i;
-    int j;
-
-    for(i = 0; i < n; ++i)
-    {
-        for(j = 0; j < n; ++j)
-        {
-            printf(" %3.lf", matrix[ i * n + j ]);
-        }
-
-        printf("\n");
     }
 
     return;
@@ -96,12 +160,6 @@ int main (int argc, char *argv[])
 
   gen_hermitian(a, n_total);
 
-  /*
-  printf("hermitian matrix to factor:\n");
-  print_matrix(a, n_total);
-  printf("\n");
-  */
-  
   plasma_init();
 
   /* Main testing loop */
@@ -124,10 +182,16 @@ int main (int argc, char *argv[])
          ,a
          ,n_total
     );
+
+    printf("return val: %d\n", r);
   }
 
 
   plasma_finalize();
+
+  /* Final result */
+  printf("final result:\n");
+  print_matrix(a, n);
 
   free(a);
 
