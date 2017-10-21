@@ -1,4 +1,9 @@
+#Captain! The length of the color map is used to determine how long the bars
+#In the bar graph should be. This seems like a problem.
+#Write a batch script to gather data on slurm
 import matplotlib.pyplot as plt
+import xml.etree.ElementTree as xml
+import argparse
 import decimal
 import sys
 from matplotlib import colors
@@ -14,28 +19,77 @@ class kernel_node:
         self.tuple_list.append(start, end - start)
         self.kernels.append(kernel_string)
 
-#You must pass it a list or a file name
-def run(arg, nature, show):
-    #Contains kernel nodes
-    kernel_data = dict()
+def read_color_config(f):
 
-    #Colors to use for Gantt boxes
-    kernel_colors= list(colors.cnames.keys())
+    tree = xml.parse(f)
 
-    #Associates kernel names with their color
-    color_map = dict()
+    color_map = {}
 
-    if(nature == 'file'):
-        f = open(arg)
-        lines = f.read()
-        f.close()
-        lines = lines.split('\n')
-    elif(nature == 'list'):
-        lines = arg
-    else:
-        print('invalid arguments, exiting')
+    #Come on now. Have good practice and close the file
+    f.close()
+
+    root = tree.getroot()
+
+    color_list_tag = root.find('color_list')
+
+    if(color_list_tag == None):
+        
+        print('XML file does not contain a \'color_list\' tag. Exiting')
+
         sys.exit()
+
+    color_pairs = color_list_tag.findall('pair')
+
+    for pair in color_pairs:
+
+        val_str = pair.find('value').text.strip()
+
+        color_map[pair.find('key').text.strip()] = val_str
     
+    return color_map
+
+
+    
+
+#Start of main code
+#Get command line args
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+                   '-i', '--input', \
+                   help = 'Specify a list of input files', \
+                   nargs = '+', \
+                   type = argparse.FileType('r'), \
+                   required = True
+                   )
+
+#Denotes colors for the kernels
+parser.add_argument(
+                   '-c', '--config', \
+                   help = 'Specify the XML config file', \
+                   type = argparse.FileType('r'), \
+                   required = True
+                   )
+
+args = parser.parse_args()
+
+file_list = args.input
+
+#Contains kernel nodes
+kernel_data = {}
+
+#Associates kernel names with their color
+color_map = read_color_config(args.config)
+
+#Captain! Error checking
+print(color_map)
+
+for f in file_list:
+
+    lines = f.read()
+    f.close()
+    lines = lines.split('\n')
+
     #Skip the title line
     del lines[0]
 
@@ -65,21 +119,18 @@ def run(arg, nature, show):
             if(min_time > start):
                 min_time = start
             
-            #update kernel-to-color lookup table
-            if(kernel_string not in color_map):
-                if kernel_colors:
-                    color_map[kernel_string] = kernel_colors.pop()
-                else:
-                    print('more kernels than colors!')
-                    exit()
-
             #create a new broken bar for a new thread_id
             if thread_id not in kernel_data:
                 kernel_data[thread_id] = kernel_node()
 
             #create or update a broken bar for the thread_id
             kernel_data[thread_id].tuple_list.append((start, end-start))
-            kernel_data[thread_id].kernels.append(color_map[kernel_string])
+            if(kernel_string in color_map):
+                color_string = color_map[kernel_string]
+            else:
+                color_string = color_map['default']
+
+            kernel_data[thread_id].kernels.append(color_string)
 
         
     #set x_limit and y_limit
@@ -101,8 +152,8 @@ def run(arg, nature, show):
 
     axis.set_yticks(yticks)
     axis.set_yticklabels(yticklabels)
-    axis.set_title('Kernel Durations')
-    
+    axis.set_title(f.name)
+
     #Graph the color legend
     legend_graph, legend_axis = plt.subplots()
     bar_lengths = [5] * len(color_map)
@@ -112,14 +163,11 @@ def run(arg, nature, show):
 
     legend_axis.set_yticks(legend_ypos)
     legend_axis.set_yticklabels(legend_labels)
-    legend_axis.set_title('Legend')
+    legend_axis.set_title(f.name + ' Legend')
 
     legend_axis.barh(legend_ypos, bar_lengths, color = legend_color, align = 'center')
 
     #Don't show the graph, just see how long it takes to render
-    if(show == True):
-        plt.show()
+    plt.show()
+    #Do I need this line?
     plt.close('all')
-
-if(__name__ == '__main__'):
-    run('kernel_data.txt', 'file', True)

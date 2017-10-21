@@ -14,6 +14,9 @@ num_fields = 9
 
 haswell_str = 'Haswell E5-2650 v3'
 
+#Number of iterations at each problem size to average
+num_iters = 1
+
 def plot_point_data(xdata, ydata, line_labels, nb):
 
     n_lines = len(xdata)
@@ -109,7 +112,44 @@ def plot_point_data(xdata, ydata, line_labels, nb):
 
     plt.show()
 
-def append_data(line, xlist, ylist):
+def append_data(lines, xlist, ylist, num_iters):
+
+    length = len(lines)
+
+    #Account for trailing newline
+    if(num_iters == 1):
+
+        stride = 1
+
+    else:
+        
+        stride = num_iters + 1
+
+    for i in range(0, length, stride):
+
+        #If there aren't num_iters lines of data left to average
+        if(length - i - 1 < stride):
+
+            continue
+    
+        total = 0
+
+        print('iteration chunk:')
+        for j in range(0, num_iters):
+           
+            data = lines[ i + j ].strip().split()
+
+            print('adding {} to the average...'.format(data[gflops_pos]))
+            total += float(data[gflops_pos])
+
+        avg = total / num_iters
+
+        xlist.append(int(data[n_pos]))
+
+        ylist.append(avg)
+       
+    
+def append_data_old(line, xlist, ylist):
 
     data = line.strip().split()
 
@@ -169,9 +209,12 @@ for f in file_list:
     line_labels.append(f.name + ', nb = ' + nb)
 
 
-    for line in lines:
+    #for line in lines:
 
-        append_data(line, xlist, ylist)
+        #append_data(line, xlist, ylist)
+
+    #Captain! replace the function above to average the gflops
+    append_data(lines, xlist, ylist, num_iters)
 
     xdata.append(xlist)
 

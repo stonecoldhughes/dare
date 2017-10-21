@@ -1,0 +1,9 @@
+<color_config>
+<color_list>
+    <pair> <key> default </key> <value> Black </value> </pair>
+    <pair> <key> core_dgemm </key> <value> Cyan </value> </pair>
+    <pair> <key> core_dsyrk </key> <value> Magenta </value> </pair>
+    <pair> <key> core_dtrsm </key> <value> Crimson </value> </pair>
+    <pair> <key> core_dpotrf </key> <value> SeaGreen </value> </pair>
+</color_list>
+</color_config>

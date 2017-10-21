@@ -1,3 +1,8 @@
+/* 
+    Never run more than 1 iteration! Doing so will cause a Cholesky
+    factorization to be attempted on a matrix that is very likely not to
+    be positive definite!
+*/
 #include "plasma.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -6,27 +11,30 @@
 
 #define ELEMENT_MAX 256
 #define BOTTOM_ROW_MAX 10
-#define PRINT 1
+#define PRINT 0
 
 void print_matrix(double *matrix, int n)
 {
-    int i;
-    int j;
-
-    printf("matrix:\n");
-
-    for(i = 0; i < n; ++i)
+    if(PRINT)
     {
-        for(j = 0; j < n; ++j)
+        int i;
+        int j;
+
+        printf("matrix:\n");
+
+        for(i = 0; i < n; ++i)
         {
-            printf(" %4.0lf", matrix[ i * n + j ]);
+            for(j = 0; j < n; ++j)
+            {
+                printf(" %4lf", matrix[ i * n + j ]);
+            }
+
+            printf("\n");
         }
 
         printf("\n");
     }
-
-    printf("\n");
-
+    
     return;
 }
 
@@ -79,10 +87,8 @@ void gen_hermitian(double *matrix, int n)
     }
     
     /* test */
-    printf("triangular:\n");
     print_matrix(tmp, n);
 
-    printf("Hermitian positive definite:\n");
     print_matrix(matrix, n);
     
     free(tmp);
@@ -113,6 +119,36 @@ void gen_symmetric(double *matrix, int n)
     return;
 }
 
+void gen_symmetric_2(double *matrix, int n)
+{
+    int i;
+    int j;
+
+    for(i = 0; i < n; ++i)
+    {
+        for(j = 0; j < n; ++j)
+        {
+            if(i < j)
+            {
+                double val = (double)((rand() % ELEMENT_MAX) + 1) / ELEMENT_MAX;  
+
+                matrix[ i * n + j ] = val;
+            }
+
+            else if(i == j)
+            {
+                double val = (double)(rand() % ELEMENT_MAX + 1) + n;
+
+                matrix[i * n + j ] = val;
+            }
+
+            else matrix[i * n + j] = matrix[j * n + i];
+        }
+    }
+
+    return;
+}
+
 int dim_rand(int m_low, int m_add)
 {
     return m_low + ((rand() % m_add) + 1);
@@ -122,6 +158,7 @@ int main (int argc, char *argv[])
 {
   int i;
   int n;
+  int nb;
   int seed;
   double *a;
   int n_low;
@@ -131,11 +168,11 @@ int main (int argc, char *argv[])
   int iterations;
 
   /* Command line arguments should be m_low, m_high, n_low, n_high, iterations */ 
-  if(argc < 5) 
+  if(argc < 6) 
   {
     printf(
             "wrong number of arguments.\n"
-            "Expected n_low, n_add, iter, seed\n"
+            "Expected n_low, n_add, iter, seed, nb\n"
             "set seed to -1 to use time(NULL) for seed value\n"
           );
     
@@ -151,6 +188,11 @@ int main (int argc, char *argv[])
   if(seed != -1) srand(seed);
   else srand(time(NULL));
 
+  /* Get nb, but it can't be set until after plasma_init() */
+  nb = atoi(argv[5]);
+
+  printf("nb from command line: %d\n", nb);
+
   n_total = n_low + n_add;
 
   /* allocate enough space to accomodate the largest possible matrix */
@@ -158,9 +200,11 @@ int main (int argc, char *argv[])
 
   a = (double *)malloc(len_bytes);
 
-  gen_hermitian(a, n_total);
+  gen_symmetric_2(a, n_total);
 
   plasma_init();
+  
+  plasma_set(PlasmaNb, nb);
 
   /* Main testing loop */
   for(i = 0; i < iterations; ++i)
@@ -169,10 +213,7 @@ int main (int argc, char *argv[])
     
     else n = n_total;
     
-    if(PRINT)
-    {
-        printf("running with n = %d\n", n);
-    }
+    printf("running with n = %d\n", n);
 
     /* Decompose the square Hermitian with a Cholesky factorization */
     int r = plasma_dpotrf
@@ -190,7 +231,6 @@ int main (int argc, char *argv[])
   plasma_finalize();
 
   /* Final result */
-  printf("final result:\n");
   print_matrix(a, n);
 
   free(a);
