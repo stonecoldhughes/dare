@@ -813,7 +813,7 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
         
         else:
             
-            string += ('\n' + four_space + 'return ret_val;\n}\n\n')
+            string += ('\n' + four_space + 'return PlasmaSuccess;\n}\n\n')
 
         f.write(string)
 
@@ -836,6 +836,7 @@ def cmake_add_library(root):
            autogen.cpp
            profile.cpp
            dare_base.cpp
+           simulate.cpp
            )'''
     
     spaces = len('add_library') * ' '

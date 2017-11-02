@@ -21,7 +21,7 @@ void dare_base::kernel_to_file()
         append = false;
     }
 
-    fprintf(file, "kernel t_start t_end kernel_identifier thread_id\n");
+    fprintf(file, "kernel t_start t_end t_elapsed kernel_identifier thread_id\n");
 
     for(iter1 = kernel_data.begin(); iter1 != kernel_data.end(); iter1++)
     {
@@ -31,10 +31,11 @@ void dare_base::kernel_to_file()
         {   
             fprintf(
                     file
-                    ,"  %s %lf %lf %llu %llu\n"
+                    ,"  %s %lf %lf %lf %llu %llu\n"
                     ,iter2->second->kernel.c_str()
                     ,iter2->second->t_start
                     ,iter2->second->t_end
+                    ,iter2->second->t_end - iter2->second->t_start
                     ,iter2->second->task_id
                     ,iter2->second->thread_id
                    );  

@@ -3,7 +3,7 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
         
     include_directories(
                    /Users/hhughe11/plasma-17.1/include
-                   /Users/hhughe11/research/dare
+                   /Users/hhughe11/research/plasma/include
                    /opt/intel/mkl/include
                    )
 
@@ -11,12 +11,12 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
 
     add_library(
                           profile_lib SHARED
-           /Users/hhughe11/research/dare/trace.c
            
            hooks.cpp
            autogen.cpp
            profile.cpp
            dare_base.cpp
+           simulate.cpp
            )
 
     target_link_libraries(

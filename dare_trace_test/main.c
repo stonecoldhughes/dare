@@ -149,6 +149,30 @@ void gen_symmetric_2(double *matrix, int n)
     return;
 }
 
+void gen_identity(double *matrix, int n)
+{
+    int i;
+    int j;
+
+    for(i = 0; i < n; ++i)
+    {
+        for(j = 0; j < n; ++j)
+        {
+            if(i == j)
+            {
+                matrix[ i * n + j ] = 0;
+            }
+
+            else
+            {
+                matrix[ i * n + j ] = 1.0;
+            }
+        }
+    }
+
+    return;
+}
+
 int dim_rand(int m_low, int m_add)
 {
     return m_low + ((rand() % m_add) + 1);
@@ -200,7 +224,13 @@ int main (int argc, char *argv[])
 
   a = (double *)malloc(len_bytes);
 
+  /* 
+  Captain! Change this to the identity matrix and see if timing results
+  are similar?
+  */
   gen_symmetric_2(a, n_total);
+
+  //gen_identity(a, n_total);
 
   plasma_init();
   

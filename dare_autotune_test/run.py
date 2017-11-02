@@ -136,20 +136,12 @@ def dump_point_data(xdata, ydata, line_labels):
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-                   '-e', '--executable',\
-                   help = 'Specify the executable name',\
-                   required = True
-                   )
-
-parser.add_argument(
                    '-f', '--file',\
                    help = 'File containing executable parameters', \
                    required = True
                    )
 
 args = parser.parse_args()
-
-executable = './' +  args.executable
 
 #Data sets to plot, 2 dimensional matrices. Possibly change to a list of tuples?
 xdata = []
@@ -158,74 +150,71 @@ ydata = []
 
 line_labels = []
 
-#Tests a dgemm followed by a cholesky
-if(executable == './dgemm_dpotrf'):
+print('This test requires a command line string and a stdin string\n')
 
-    print('This test requires a command line string and a stdin string\n')
+print('Command line string format: m_low m_add n_low n_add iter seed\n')
+
+print('Stdin string format: num_args tile_size <size> kernel_fraction' \
+      + ' <ratio>:<ratio>')
+
+#Enter the name of a file with command strings and stdin strings to run
+#The program with
+arg_file = open(args.file, 'r')
+
+#Read the contents of the file into a data structure.
+lines = arg_file.readlines()
+
+#The first line of the file says how many data points are in each line
+n_points = int(lines[0])
+
+#Number of lines of text in the config file that describe a line in the graph
+#2 lines are required to run the dgemm_dpotrf program
+line_chunk = n_points * n_dgemm_dpotrf_arg_strings + 1
+
+#Captain! Don't forget to get an overhead run
+print('i in range(1, {len_lines}, {line_chunk})'.format(len_lines = len(lines), line_chunk = line_chunk))
+for i in range (1, len(lines), line_chunk):
     
-    print('Command line string format: m_low m_add n_low n_add iter seed\n')
-    
-    print('Stdin string format: num_args tile_size <size> kernel_fraction' \
-          + ' <ratio>:<ratio>')
+    print('at {i} in config file'.format(i = i))
 
-    #Enter the name of a file with command strings and stdin strings to run
-    #The program with
-    arg_file = open(args.file, 'r')
+    xdata.append([])
 
-    #Read the contents of the file into a data structure.
-    lines = arg_file.readlines()
+    ydata.append([])
 
-    #The first line of the file says how many data points are in each line
-    n_points = int(lines[0])
+    xlist = xdata[-1]
 
-    #Number of lines of text in the config file that describe a line in the graph
-    #2 lines are required to run the dgemm_dpotrf program
-    line_chunk = n_points * n_dgemm_dpotrf_arg_strings + 1
+    ylist = ydata[-1]
 
-    #Captain! Don't forget to get an overhead run
-    print('i in range(1, {len_lines}, {line_chunk})'.format(len_lines = len(lines), line_chunk = line_chunk))
-    for i in range (1, len(lines), line_chunk):
+    #The first line of every line_chunk is the label
+    line_labels.append(lines[i])
+
+    #Get the point data lines and run
+    for j in range (i+1, i+line_chunk, 2):
+
+        cmd_args = lines[j].split(' ')
+
+        stdin_args = lines[j+1].encode('utf-8')
         
-        print('at {i} in config file'.format(i = i))
+        t1 = time.perf_counter()
 
-        xdata.append([])
+        p = subprocess.Popen(
+                            cmd_args, \
+                            stdin = subprocess.PIPE, \
+                            stdout = subprocess.PIPE, \
+                            )
 
-        ydata.append([])
+        #Captain! Should t1 be here to avoid overhead?
+        out = p.communicate(stdin_args)
 
-        xlist = xdata[-1]
+        t2 = time.perf_counter()
 
-        ylist = ydata[-1]
+        #tuple contains m, n
+        xlist.append((int(cmd_args[1]), int(cmd_args[3])))
 
-        #The first line of every line_chunk is the label
-        line_labels.append(lines[i])
+        ylist.append(t2 - t1)
 
-        #Get the point data lines and run
-        for j in range (i+1, i+line_chunk, 2):
+        print(out[0].decode('utf-8'))
 
-            cmd_args = lines[j].split(' ')
+dump_point_data(xdata, ydata, line_labels)
 
-            stdin_args = lines[j+1].encode('utf-8')
-            
-            t1 = time.perf_counter()
-
-            p = subprocess.Popen(
-                                cmd_args, \
-                                stdin = subprocess.PIPE, \
-                                stdout = subprocess.PIPE, \
-                                )
-
-            #Captain! Should t1 be here to avoid overhead?
-            out = p.communicate(stdin_args)
-
-            t2 = time.perf_counter()
-
-            #tuple contains m, n
-            xlist.append((int(cmd_args[1]), int(cmd_args[3])))
-
-            ylist.append(t2 - t1)
-
-            print(out[0].decode('utf-8'))
-
-    dump_point_data(xdata, ydata, line_labels)
-
-    plot_point_data(xdata, ydata, line_labels)
+plot_point_data(xdata, ydata, line_labels)

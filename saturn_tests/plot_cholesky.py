@@ -1,3 +1,4 @@
+#Puts command line files on the same graph
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +16,7 @@ num_fields = 9
 haswell_str = 'Haswell E5-2650 v3'
 
 #Number of iterations at each problem size to average
-num_iters = 1
+num_iters = 3
 
 def plot_point_data(xdata, ydata, line_labels, nb):
 
@@ -109,7 +110,6 @@ def plot_point_data(xdata, ydata, line_labels, nb):
                           .format(nb = nb, chip = haswell_str)
                          )
 
-
     plt.show()
 
 def append_data(lines, xlist, ylist, num_iters):
@@ -139,7 +139,7 @@ def append_data(lines, xlist, ylist, num_iters):
            
             data = lines[ i + j ].strip().split()
 
-            print('adding {} to the average...'.format(data[gflops_pos]))
+            print('adding {0} to the average...'.format(data[gflops_pos]))
             total += float(data[gflops_pos])
 
         avg = total / num_iters

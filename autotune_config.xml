@@ -3,10 +3,13 @@
     <use_stdin> 1 </use_stdin>
     <use_default> 1 </use_default>
     <kernel_fraction> stdin </kernel_fraction>
-    <plasma_dir> /Users/hhughe11/research/plasma </plasma_dir>
+    <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
     <tile_size> stdin </tile_size>    
     <include_dirs>
     <dir> /Users/hhughe11/research/plasma/include </dir>
+    <dir> /opt/intel/mkl/include </dir>
     </include_dirs>
+    <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>
+    <cpp_compiler> /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0 </cpp_compiler>
 
 </config>
