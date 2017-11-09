@@ -10,9 +10,7 @@ class Profile : public dare_base
 
         ~Profile();
 
-        void time_kernel(uint64_t kernel, uint64_t task_id);
-
-        void track_kernel(uint64_t kernel_type, uint64_t invokation_id, double t);
+        void track_kernel(uint64_t kernel_type, uint64_t invocation_id, double t);
 
         /* 
         if you want to run 10 out of every 100 kernels,

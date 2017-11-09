@@ -50,15 +50,5 @@ class fake_dpotrf_data
         */
         double *tile();
 
-        /* returns whether or not the clip is expended */
-        int empty();
-        
         void print_matrix_clip();
 };
-
-
-
-
-
-
-

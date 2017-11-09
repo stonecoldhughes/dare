@@ -43,16 +43,6 @@ class dare_base
     /* functions */
     protected:
         
-        /* Writes the kernel contents to a text file */
-        void kernel_to_file();
-        
-        /* Protection for the kernel_data map */
-        mutex kernel_mut;        
-        
-        /* Contains a kernel_node class for each kernel invocation */
-        map<string, map<uint64_t, class kernel_node*> > kernel_data;
-
-        /* Captain! This will replace kernel_to_file */
         /* dump data to a file */
         void dump_data();
 

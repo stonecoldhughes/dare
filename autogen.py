@@ -401,8 +401,6 @@ dare_base::~dare_base()
 
     if(default_output)
     {
-        kernel_to_file();
-
         dump_data();
     }
 
@@ -543,12 +541,12 @@ def profile_wrap(c, spaces):
         
     wrap_above = '''int count = profile.core_count[{name}]++;
 
-    {sp}profile.time_kernel((unsigned long){name}, count)'''\
+    {sp}profile.track_kernel((unsigned long){name}, count, omp_get_wtime())'''\
     .format(sp = spaces, name = c.name.upper())
 
     wrap_below = \
     '''
-    {sp}profile.time_kernel((unsigned long){name}, count)'''\
+    {sp}profile.track_kernel((unsigned long){name}, count, omp_get_wtime())'''\
     .format(sp = spaces, name = c.name.upper())
 
     wrap = wrap_class(wrap_above, wrap_below)

@@ -1,5 +1,20 @@
 How to test it and get numbers:
     
+    Show that autotune runs with fake data and 1:1 kernel fraction run approximately
+    the same timing-wise as regular profile runs, for many different tile sizes
+
+    Then show that for a sweep of tile sizes, the relative performance is the same.
+    Formula to calculate relative error of list ordering:
+    Correct list: 1 2 3 4 5
+    Incorrect list: 1 3 2 5 4
+    Consider 3. It should be preceded by 2 and followed by 4.
+    How many spaces would 4 have to move to be after 3? How man would 2 have to move
+    to be before 3? The answers are 2 and 2, respectively. The total is 4. Do this
+    for each number and the sum is 14. This is the relative error of the orderings.
+    For a sweep of 50 tile sizes, order the performance of tile size 0 to 50 for
+    a full profiled case and a fake data one. See what the error is. See if it gets
+    the same minimum. Time the whole process and see how long it takes.
+
     run iterations of running through clip cycles of fake_data.
     compare against numbers from plasma runs
 
@@ -15,7 +30,7 @@ Updated list:
     times vector
 
     once tile returns NULL, you have a clip of times. Busy wait for those
-    invokations? What if you interleave actual times and pre-stored times?
+    invocations? What if you interleave actual times and pre-stored times?
     do actual runs dynamically up to a certain size.
 
     make interleaving configurable parameters. clip_ratio in addition to
@@ -25,11 +40,13 @@ Updated list:
     always ignore the first timing result for clip time. Leave it in the
     vector but never randomly select it.
 
-    change the kernel_data map in dare_base.h to an array of vectors.
+    change the kernel_data map in dare_base.h to an array of pointers to vectors.
     This array has a vector for each thread. Each vector holds a knode.
 
     embed the new time_kernel within the original, then change name
     after you've verified that the data is the same.
+
+    make track_kernel() a standalone and replace time_kernel with it
 
 Things you must implement:
 
