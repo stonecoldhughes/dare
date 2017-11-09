@@ -6,7 +6,6 @@
     <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
     <tile_size> stdin </tile_size>    
     <include_dirs>
-    <dir> /Users/hhughe11/research/plasma/include </dir>
     <dir> /opt/intel/mkl/include </dir>
     </include_dirs>
     <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>

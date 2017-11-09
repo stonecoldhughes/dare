@@ -311,14 +311,18 @@ using namespace std;
 dare_base::dare_base()
 {{
     void (*fptr)();
-
-    void *plasma_file;
+    
+    /* OpenMP returns 1 if this is called outside a parallel region */
+    #pragma omp parallel
+    {{
+        num_threads = omp_get_max_threads();
+    }}
 
     /* Set the default output flag */
     default_output = {default_output};
 
     /* Obtain a handle to the core_blas library */
-    core_blas_file = dlopen(
+    void *core_blas_file = dlopen(
                             "{prefix}libcoreblas.so", 
                             RTLD_LAZY
                            );
@@ -326,7 +330,7 @@ dare_base::dare_base()
     if(core_blas_file == NULL) {{printf("core_blas_file null\\n"); exit(0);}}
     
     /* Obtain a handle to the plasma library */
-    plasma_file = dlopen(
+    void *plasma_file = dlopen(
                         "{prefix}libplasma.so",
                         RTLD_LAZY
                         );
@@ -352,6 +356,26 @@ dare_base::dare_base()
 
     f.write( \
     '''
+    /* allocate kernel_vec */
+    kernel_vec = new vector<class kernel_node>*[num_threads];
+
+    for(int i = 0; i < num_threads; ++i)
+    {
+        kernel_vec[i] = new vector<class kernel_node>();
+    }
+
+    /* allocate add_node */
+    add_node = new int[num_threads];
+
+    for(int i = 0; i < num_threads; ++i)
+    {
+        add_node[i] = 1;
+    }
+    ''' \
+           )
+
+    f.write( \
+    '''
     /*set atomic counters*/
     for(int i = 0; i < TABLE_SIZE; i++)
     {
@@ -369,10 +393,30 @@ dare_base::dare_base()
     '''
 dare_base::~dare_base()
 {
+    /* dump data to a file */
+    /* these functions also clear the vector in case file is written to
+    multiple times*/
+
+    /* remove kernel_to_file once you verify information is the same */
+
     if(default_output)
     {
         kernel_to_file();
+
+        dump_data();
     }
+
+    /* free kernel_vec */
+    for(int i = 0; i < num_threads; ++i)
+    {
+        kernel_vec[i]->clear();
+        delete kernel_vec[i];
+    }
+
+    delete[] kernel_vec;
+
+    /* free add_node */
+    delete[] add_node;
 
     return;
 }''' \
@@ -836,7 +880,6 @@ def cmake_add_library(root):
            autogen.cpp
            profile.cpp
            dare_base.cpp
-           simulate.cpp
            )'''
     
     spaces = len('add_library') * ' '
@@ -913,7 +956,6 @@ def write_cmake_lists(cmake_lists, root):
                          {plasma_dir}/lib/libcoreblas.so
                          {plasma_dir}/lib/libplasma.so
                          -fopenmp
-                         -g
                          )
     """.format(include_dirs = include_directories(root), \
         plasma_dir = plasma_dir, \

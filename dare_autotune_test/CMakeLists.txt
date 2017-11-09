@@ -18,10 +18,10 @@ include_directories(
                    ${PLASMA_DIR}/include
                    )
 
-add_executable(dpotrf_test main.c)
+add_executable(dpotrf_test.bin main.c)
 
 target_link_libraries(
-                     dpotrf_test
+                     dpotrf_test.bin
                      ${DARE_DIR}/libprofile_lib.dylib
                      ${PLASMA_DIR}/lib/libplasma.so
                      ${PLASMA_DIR}/lib/libcoreblas.so

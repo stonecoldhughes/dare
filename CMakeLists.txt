@@ -3,7 +3,6 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
         
     include_directories(
                    /Users/hhughe11/plasma-17.1/include
-                   /Users/hhughe11/research/plasma/include
                    /opt/intel/mkl/include
                    )
 
@@ -16,7 +15,6 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
            autogen.cpp
            profile.cpp
            dare_base.cpp
-           simulate.cpp
            )
 
     target_link_libraries(
@@ -24,6 +22,5 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
                          /Users/hhughe11/plasma-17.1/lib/libcoreblas.so
                          /Users/hhughe11/plasma-17.1/lib/libplasma.so
                          -fopenmp
-                         -g
                          )
     

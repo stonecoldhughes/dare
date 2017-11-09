@@ -1,0 +1,48 @@
+salloc --job-name caffeine --nodes 1 bash
+
+salloc --job-name caffeine --nodelist a[00-09] --partition shared
+
+scancel -n caffeine
+
+
+How do I control the number of cores assigned to my slurm job?
+CPUs per task? --cpus-per-task
+
+--ntasks = number of tasks allocated for the job
+--ntasks-per-core
+
+scontrol show job <job_id> -d
+
+salloc --job-name caffeine --nodes 1 --ntasks 1 --cpus-per-task 1 bash
+
+
+Delete eventually
+Tasks:
+
+    Run plasma for several curves and plot the stuff
+
+    1 core - running, --nb=128
+    5 cores
+    10 cores
+    20 cores
+
+    Write a Python script that graphs these values.
+    reference dare_tests/run.py for this
+
+    Check this Plasma distribution for prereqs to run testing:
+
+        1. CMake
+        2. g++
+        3. Weak symbol linkage
+
+    Restructure your tracing directory for more compartmentalized tracing
+
+Run strings:
+
+python plot_cholesky.py -i cholesky_t1_nb64.txt cholesky_t5_nb64.txt cholesky_t10_nb64.txt cholesky_t20_nb64.txt
+
+python plot_cholesky.py -i cholesky_t1_nb128.txt cholesky_t5_nb128.txt cholesky_t10_nb128.txt cholesky_t20_nb128.txt
+
+python plot_cholesky.py -i cholesky_t1_nb256.txt cholesky_t5_nb256.txt cholesky_t10_nb256.txt cholesky_t20_nb256.txt
+
+python plot_cholesky.py -i cholesky_t1_nb512.txt cholesky_t5_nb512.txt cholesky_t10_nb512.txt cholesky_t20_nb512.txt

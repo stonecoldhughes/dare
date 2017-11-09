@@ -1,0 +1,216 @@
+How to test it and get numbers:
+    
+    run iterations of running through clip cycles of fake_data.
+    compare against numbers from plasma runs
+
+    compare execution times of core_dgemms in non-fractional plasma routines
+    with core_dgemms in fractional ones.
+
+    also compare error-checking routines like core_dpotrf()
+
+Updated list:
+
+    as soon as a matrix clip is used and the core kernel has been timed, get
+    that time off the back of a vector and put it in time_index++ of the clip
+    times vector
+
+    once tile returns NULL, you have a clip of times. Busy wait for those
+    invokations? What if you interleave actual times and pre-stored times?
+    do actual runs dynamically up to a certain size.
+
+    make interleaving configurable parameters. clip_ratio in addition to
+    kernel_fraction. The goal is to definitely run the entire clip.
+    Higher clip ratios correspond with smaller problems.
+
+    always ignore the first timing result for clip time. Leave it in the
+    vector but never randomly select it.
+
+    change the kernel_data map in dare_base.h to an array of vectors.
+    This array has a vector for each thread. Each vector holds a knode.
+
+    embed the new time_kernel within the original, then change name
+    after you've verified that the data is the same.
+
+Things you must implement:
+
+
+    You need reloadable matrix clips. An array of matrices to be factored,
+    they can all be copies of the same reference one. These will be what
+    core_dpotrf randomly factors.
+
+    make tile_size a feature of dare_base?
+
+
+    Possibly just record the runtimes of each one, and then use this array
+    of runtimes to be the sleep time for kernels moving forward? This is only
+    if the timing results do not turn out how you expected.
+
+    The ideal solution is to have the clip reload by memcpy()ing the reference
+    matrix again into the array during one of the core_blas function calls.
+    A core_blas that carries out a reload must consume an equal amount of time
+    as a function that only does work. Thus, you must time the memcpy(), then
+    afterwards spin long enough to occupy the time slot:
+
+    inline all this:
+
+    t1 = get_time();
+    memcpy();
+    t2 = get_time();
+    memset_time = t2 - t1;
+
+    spin_sleep = kernel_time -  memset_time;
+
+    t = get_time();
+    end = t + spin_sleep();
+
+    while(get_time() < end);
+
+    return;
+
+    Each thread needs an instance of its own "fake_data" class for each function
+    it may call. That way you don't ever have to worry about thread contention.
+    These fake_data objects need to be made part of the autotune classes...
+
+    Another possible solution is just to record the time it takes to reload the
+    matrix_clip and subract that from the total calculated runtime. <--- simplest
+    solution. Actually no because you don't know how the latencies overlap.
+    I suppose you could approximate it by assuming a certain amount of overlap,
+    but I don't know how accurate that would be
+
+    create the fake_data class and use it for your timing results
+
+    In hooks.cpp, the usage for the fake data class will roughly be as follows:
+
+    if(fake_data_sets[thread_num].clip_not_empty())
+    {
+        ret_val = ((core_dpotrf_hook_type)profile.core[CORE_DPOTRF])
+        (
+         uplo,
+         fake_data[thread_num].n,
+         fake_data[thread_num].matrix(),
+         fake_data[thread_num].lda
+        )
+    }
+
+    else
+    {
+        /* carry out reload or sleep protocol */
+    }
+
+    or something similar to this
+
+    create a new test directory in which you copy over that file
+
+
+Mission Statement:
+
+    Create a system to simulate, autotune, and trace libaries
+    To create a small problem that is trivial to optimize for.
+    This small problem has identical runtime characteristics to the
+    problem being autotuned for, but timing results differ only by
+    a scalar factor.
+
+Next:
+    
+    How many different routines do error checking? What kind of parameters do they
+    run on? How can I give them correct, dummy data to work on in real time before
+    the program starts? What effect do different leading dimension values have
+    on runs of mkl core_blas functions? Possibly none, it might only affect memory
+    behavior.
+
+    Fake data will passed to the core_blas kernel when it is called.
+    It will be constructed as a seperate class object?
+
+    Fake data classes need to be generated as part of a model, all of which inherit
+    from the same base class. This is because core_blas potrf uses vastly different
+    parameters than core_blas parfb, for example.
+
+    Make autotuning a seperate class and then reintegrate with profile and update
+    autogen.py to be able to use it.
+
+    autogen.cpp needs to declare all global objects
+
+    possibly convert global objects to static objects?
+
+    make autotuning stuff and fake data stuff separate static objects
+    declared at the end of autogen.cpp. config.xml needs options for max tile
+    size. Max tile size will be used for fake data stuff.
+
+    fake data class includes a map that maps kernel type to a pointer to the
+    proper static class? Needs a factory method to initialize the class properly.
+
+    put autogeneration warnings at the top of autogenerated files
+
+    ^infrastructure for fake data. Below is the actual research that must
+    be done to determine how the fake data should be generated. Does leading
+    dimension matter? You should populate an array where each kernel enum
+    indexes into the array and the element is a static object of the correct
+    fake data type. 
+    
+    Questions:
+
+        1. How fast are the dummy kernels running compared to the real ones?
+        2. Are they slower?
+        3. If they are, I need to give them fake data to run.
+        4. What parameters are they running with?
+
+    Fields to add:
+
+        elapsed time
+        all parameters
+
+
+    1. Find out what matrix sizes the core_blas functions are working on
+    2. Spoof the return value and see if all kernels are still scheduled correctly
+    3. See if you can get them all to run artificially
+    4. See if you can give them dummy data to run on.
+    5. Dummy data needs to be in range of min and max tile sizes.
+    6. lapacke_dpotrf() <--- what is the return value?
+
+command string to run main:
+    
+    ./main 4000 1000 4000 1000 1 250 <<< "2 kernel_fraction 50:50 tile_size 128"
+
+Tasks:
+
+        1. Show that the autotuner approximates real runs by making a graph
+           that plots both for the same tile size and increasing problem
+           size. Find the window of tile size, problem size, and problem type
+           that it approximates the best for. Investigate How small of a
+           kernel fraction can be used and still get good results. Make a
+           testing script that makes all this easy.
+
+
+python script:
+
+    run main with a certain tile size and problem size linked to plasma
+    run it with same parameters but linked with your library
+
+    passable parameters to main: problem size on command line? m, n, tolerance, iterations
+
+    passable parameters to library: tile size. Pass in on stdin. Set
+    tile size with plasma_set() in plasma_init(). kernel fraction? 
+
+
+Parameters to python script:
+
+    1. Which main executable (determines problem type)
+    2. Which tile size
+    3. Which problem sizes, maybe as a list
+    4. Which kernel fractions
+
+
+Search space looping order:
+
+   -1. executable
+    0. tile size
+    1. Iterations of problem size
+    2. Problem sizes
+    3. For each problem size, use a different kernel fraction.
+
+
+Random shit to delete:
+
+    1. Write a script to autogenerate parameter files.
+       Increase problem size. Keep tile size the same.
+       Reduce kernel fraction.

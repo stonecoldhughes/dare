@@ -14,11 +14,12 @@ include_directories(
                    ${PLASMA_DIR}/include
                    )
 
-add_executable(fake_data_test main.cpp fake_data.cpp)
+add_executable(fake_data_test.bin main.cpp fake_data.cpp)
 
 target_link_libraries(
-                     fake_data_test
+                     fake_data_test.bin
                      ${PLASMA_DIR}/lib/libplasma.so
                      ${PLASMA_DIR}/lib/libcoreblas.so
+                     -fopenmp
                      -Wl,-rpath,${PLASMA_DIR}/lib
                      )

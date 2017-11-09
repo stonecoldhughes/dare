@@ -2,6 +2,7 @@
 #include <mutex>
 #include <string>
 #include <atomic>
+#include <vector>
 #include "omp.h"
 #include "dlfcn.h"
 #include "stdio.h"
@@ -17,6 +18,7 @@ class kernel_node
         double t_end; 
         uint64_t task_id;
         uint64_t thread_id;
+        int kernel_type;
         string kernel;
 };
 
@@ -35,9 +37,6 @@ class dare_base
         /* Contains unique identifiers for each kernel invocation */
         atomic<unsigned long> core_count[TABLE_SIZE];
         
-        /* The location where the core_blas symbols can be read from */
-        void *core_blas_file;
-
         /* The location where plasma symbols can be read from */
         void (*plasma_init_ptr)();
 
@@ -46,13 +45,31 @@ class dare_base
         
         /* Writes the kernel contents to a text file */
         void kernel_to_file();
-
-        /* Whether or not the tracer is set to the default case. Change to an enum later */
-        int default_output;
-    
-        /* Contains a kernel_node class for each kernel invocation */
-        map<string, map<uint64_t, class kernel_node*> > kernel_data;
         
         /* Protection for the kernel_data map */
         mutex kernel_mut;        
+        
+        /* Contains a kernel_node class for each kernel invocation */
+        map<string, map<uint64_t, class kernel_node*> > kernel_data;
+
+        /* Captain! This will replace kernel_to_file */
+        /* dump data to a file */
+        void dump_data();
+
+        /* Contains a vector of kernel_nodes for each thread */
+        vector<class kernel_node> **kernel_vec;
+
+        /* 
+        Same length as kernel_vec. if add_node[i] == 1, then the next
+        access to kernel_vec[i] needs to add another kernel_node.
+        if add_node[i] == 0, next access needs to update the last
+        kernel_node already there
+        */
+        int *add_node;
+        
+        /* Whether or not the tracer is set to the default case */
+        int default_output;
+
+        int num_threads;
+        
 };
