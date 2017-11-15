@@ -4,7 +4,47 @@
 
 using namespace std;
 
-int n_args = 4;
+int n_args = 5;
+
+void run(class fake_dpotrf_data *fake_dpotrf_data)
+{
+    double *m = fake_dpotrf_data->tile();
+
+    if(m != NULL)
+    {
+        double t1 = omp_get_wtime();
+
+        int ret_val = core_dpotrf(
+                PlasmaLower,
+                fake_dpotrf_data->get_tile_size(),
+                m,
+                fake_dpotrf_data->get_tile_size()
+                );
+
+        double t2 = omp_get_wtime();
+
+        double elapsed = t2 - t1;
+
+        printf("core_dpotrf %lf\n", elapsed);
+
+        fake_dpotrf_data->append_time(elapsed);
+    }
+
+    return;
+}
+
+void busy_wait(class fake_dpotrf_data *fake_dpotrf_data)
+{
+    double t = fake_dpotrf_data->tile_time();
+
+    double t1 = omp_get_wtime();
+    fake_dpotrf_data->busy_wait(t);
+    double t2 = omp_get_wtime();
+
+    printf("busy-wait for: %lf actual: %lf\n", t, t2 - t1);
+
+    return;
+}
 
 int main(int argc, char **argv)
 {
@@ -12,8 +52,7 @@ int main(int argc, char **argv)
     {
         printf(
               "wrong number of arguments!\n"
-              "expected tile_size, iterations, seed\n"
-              "set seed to -1 to use time(NULL) for seed value\n"
+              "expected tile_size, iterations, window_size, clip_size\n"
               );
 
         exit(0);
@@ -23,47 +62,68 @@ int main(int argc, char **argv)
     
     int iterations = atoi(argv[2]);
 
-    class fake_dpotrf_data fake_dpotrf_data(tile_size);
+    int window_size = atoi(argv[3]);
 
-    /* print the title line */
-    printf("clip_size %d\n", fake_dpotrf_data.clip_size);
+    int clip_size = atoi(argv[4]);
 
-    printf("tile_size %d\n", fake_dpotrf_data.tile_size);
+
+    double t = omp_get_wtime();
+    class fake_dpotrf_data *fake_dpotrf_data = new class fake_dpotrf_data(
+                                                                         clip_size,
+                                                                         tile_size,
+                                                                         window_size
+                                                                         );
+    double elapsed = omp_get_wtime() - t;
+    
+    printf("fake_dpotrf_data creation took: %lf\n", elapsed);
+
+    /* print title lines */
+    printf("clip_size %d\n", fake_dpotrf_data->get_clip_size());
+
+    printf("tile_size %d\n", fake_dpotrf_data->get_tile_size());
+
+    printf("window_size %d\n", fake_dpotrf_data->get_max_window_size());
 
     printf("core_dpotrf <time>\n");
 
-    printf("reload <time>\n");
-
+    /* Make this simulate a core_blas kernel being called over and over again */
     for(int i = 0; i < iterations; ++i)
     {
-        double *m = fake_dpotrf_data.tile();
-
-        if(m != NULL)
+        /* Clip time isn't full enough */
+        if(fake_dpotrf_data->tile_times_empty())
         {
-            double t1 = omp_get_wtime();
+            /* get a fake data matrix and run */
+            printf("not full enough ");
+            run(fake_dpotrf_data);
+        }
 
-            int ret_val = core_dpotrf(
-                    PlasmaLower,
-                    fake_dpotrf_data.tile_size,
-                    m,
-                    fake_dpotrf_data.tile_size
-                    );
-
-            double t2 = omp_get_wtime();
-
-            printf("core_dpotrf %lf\n", t2 - t1);
+        else if(fake_dpotrf_data->clip_empty())
+        {
+            /* busy wait */
+            printf("clip full ");
+            busy_wait(fake_dpotrf_data);
         }
 
         else
         {
-            fake_dpotrf_data.reload();
+            /* Captain! Change to get_max_window_size */
+            if(!(i % (2 * fake_dpotrf_data->get_max_window_size() + 1)))
+            {
+                /* get fake data matrix and run */
+                printf("random run ");
+                run(fake_dpotrf_data);
+            }
 
-            printf(
-                  "reload %lf\n", 
-                  fake_dpotrf_data.get_reload_time()
-                  );
+            else
+            {
+                /* busy wait */
+                printf("random wait ");
+                busy_wait(fake_dpotrf_data);
+            }
         }
     }
+
+    delete fake_dpotrf_data;
 
     return 0;
 }

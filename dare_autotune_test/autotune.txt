@@ -1,3 +1,31 @@
+Code:
+
+    random_n = rand() ...
+
+    if(random_n < kernel_run)
+    {
+        if(no_fake_data)
+        {
+            /* fake_data must track how long it takes to create itself */
+            create_fake_data
+        }
+
+        if(!clip_empty())
+        {
+            int count = profile.core_count...
+            track_kernel();
+            ret_val = ()();
+            track_kernel();
+            fake_data.append_time(last_kernel_time(opm_get_thread_num()))
+        }
+
+        else
+        {
+            /* Burning time. Track with profile if you need the number */
+            fake_data.busy_wait()
+        }
+    }
+
 How to test it and get numbers:
     
     Show that autotune runs with fake data and 1:1 kernel fraction run approximately

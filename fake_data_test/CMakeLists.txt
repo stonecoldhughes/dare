@@ -11,6 +11,8 @@ endif()
 
 include_directories(
                    /Users/hhughe11/research/dare/fake_data_test
+                   /Users/hhughe11/research/dare
+                   /opt/intel/mkl/include
                    ${PLASMA_DIR}/include
                    )
 

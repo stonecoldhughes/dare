@@ -17,6 +17,11 @@ class Profile : public dare_base
         you give 10:100 as the xml config's "kernel_fraction"
         where kernel_run:kernel_stride = 10:100
         */
+        /* Captain! Move this into autotune class */
+        
+        /* returns execution time of the last kernel run by a given thread */
+        double last_kernel_time(int thread_num);
+        
         int kernel_run;
 
         int kernel_stride;

@@ -1,0 +1,15 @@
+Implement:
+    
+    1. Busy-waiting for clip times
+    2. Class factory generator
+
+    you'll want a map of fake data objects.
+
+    fake_data_bank[CORE_WHATEVER][thread_num]
+
+    You need to be able to ignore certain core_blas types.
+    For example, all the little ones called inside of an SVD
+    or QR.
+
+    Create a base class that returns proper objects
+    Maybe template it?

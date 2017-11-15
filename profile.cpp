@@ -11,6 +11,14 @@ Profile::~Profile()
 {
 }
 
+/* returns the time for the last kernel that was run */
+double Profile::last_kernel_time(int thread_num)
+{
+    class kernel_node &knode = kernel_vec[thread_num]->back();
+
+    return knode.t_end - knode.t_start;
+}
+
 /* 
 Remove the "t" parameter once you've stabilized this code, replace with
 omp_get_wtime() - do it in the function call so you don't waste time jumping

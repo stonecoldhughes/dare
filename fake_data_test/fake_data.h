@@ -1,53 +1,81 @@
 #include <string>
 #include "omp.h"
+#include "autogen_types.h"
 
 using namespace std;
 
-/* Captain! Make this class an interface so hooks.cpp can easily use it */
-/* You also may want to move some of this functionality into the base class */
-class fake_dpotrf_data
+/* Base class */
+
+class fake_data
+{
+    public:
+        
+        fake_data(int clip_size, int tile_size, int winsize);
+
+        ~fake_data();
+        
+        int clip_empty();
+        
+        int tile_times_empty();
+
+        double tile_time();
+        
+        void busy_wait(double t);
+        
+        void append_time(double t);
+
+        int get_max_window_size();
+
+        int get_clip_size();
+
+        int get_tile_size();
+    
+    protected:
+        
+        int clip_size;
+
+        int tile_size;
+
+        /* moving window of tile times out of clip_times to round robin from */
+        int window_size;
+
+        int max_window_size;
+
+        /* state-dependent variables */
+        int clip_index;
+        
+        int start;
+        
+        /* an array of the times it takes to factor each matrix */
+        double *clip_times;
+        
+        int t_index;
+};
+
+/* Concrete object */
+class fake_dpotrf_data : public fake_data
 {
     public:
 
-        fake_dpotrf_data(int tile_size);
+        fake_dpotrf_data(int clip_size, int tile_size, int winsize);
 
         ~fake_dpotrf_data();
 
         /* Contains copies of the reference matrix to be factored */
         double **matrix_clip;
 
+        /* Contains the matrix that is copied to make the clip */
         double *reference_matrix;
-
-        /* Length of the matrix clip array */
-        int clip_size;
 
         /* Which matrix is next to be factored in the clip */
         /* when it reaches clip_size, a reload must occur if you want more
            matrices to factor */
-        int clip_index;
 
         /* Generates a hermitian positive definite with given dimensions */
         double *gen_matrix(int n);
         
-        /* reloads the matrix clip */
-        void reload();
+        void load_matrix_clip();
 
-        int tile_size;
-
-        /* an array of the times it takes to factor each matrix */
-        /* don't know how I'm going to fill this up */
-        double *clip_times;
-
-        /* Timing information */
-        double reload_time;
-
-        /* Prints clip times and reload time */
-        double get_reload_time();
-
-        /*
-        returns the next valid matrix from matrix_clip or NULL if it needs
-        to be reloaded
-        */
         double *tile();
 
         void print_matrix_clip();

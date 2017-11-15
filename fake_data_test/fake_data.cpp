@@ -3,22 +3,100 @@
 #include "fake_data.h"
 
 #define ELEMENT_MAX 256
-#define CLIP_SIZE 100
 
 using namespace std;
 
-fake_dpotrf_data::fake_dpotrf_data(int tile_size)
+/* Base class fake_data object methods */
+
+fake_data::fake_data(int _clip_size, int _tile_size, int _winsize)
     :
-    clip_size(CLIP_SIZE),
+    clip_size(_clip_size),
     clip_index(0),
-    tile_size(tile_size),
-    reload_time(0)
+    tile_size(_tile_size),
+    t_index(-1),
+    start(1),
+    max_window_size(_winsize)
 {
-    
     srand(time(NULL));
 
-    reference_matrix = gen_matrix(tile_size);
+    clip_times = new double[clip_size];
+    
+    return;
+}
 
+fake_data::~fake_data()
+{
+    delete[] clip_times;
+
+    return;
+}
+
+int fake_data::get_max_window_size()
+{
+    return max_window_size;
+}
+
+int fake_data::get_tile_size()
+{
+    return tile_size;
+}
+
+int fake_data::get_clip_size()
+{
+    return clip_size;
+}
+
+int fake_data::clip_empty()
+{
+    return (clip_index == clip_size);
+}
+
+int fake_data::tile_times_empty()
+{
+    return (clip_index < 2);
+}
+
+double fake_data::tile_time()
+{
+    int x = ((++t_index %= window_size) + start);
+    
+    return clip_times[x];
+}
+
+void fake_data::busy_wait(double t)
+{
+    double end = omp_get_wtime() + t;
+    
+    while(omp_get_wtime() < end);
+
+    return;
+}
+
+/* This function is meant to be called after tile() */
+void fake_data::append_time(double t)
+{
+    /* After tile is called, clip_index will be incremented */
+    /* Subtract 1 to get the index of the round that was just expended */
+    int i = clip_index - 1;
+
+    clip_times[i] = t;
+
+    if(i <= max_window_size)
+    {
+        window_size = i;
+    }
+
+    else start++;
+
+    return;
+}
+
+/* Concrete class fake_dpotrf_data object methods */
+
+fake_dpotrf_data::fake_dpotrf_data(int _clip_size, int _tile_size, int _winsize)
+    :
+    fake_data(_clip_size, _tile_size, _winsize)
+{
     matrix_clip = new double*[clip_size];
 
     for(int i = 0; i < clip_size; ++i)
@@ -26,11 +104,7 @@ fake_dpotrf_data::fake_dpotrf_data(int tile_size)
        matrix_clip[i] = new double[tile_size * tile_size]; 
     }
 
-    //printf("constructor before reload:\n");
-    //print_matrix_clip();
-    reload();
-    //printf("constructor after reload:\n");
-    //print_matrix_clip();
+    load_matrix_clip();
 
     return;
 }
@@ -82,9 +156,9 @@ void fake_dpotrf_data::print_matrix_clip()
 Once each matrix in the matrix clip has been Cholesky decomposed
 in-place or empty, reload the clip with copies of it.
 */
-void fake_dpotrf_data::reload()
+void fake_dpotrf_data::load_matrix_clip()
 {
-    double t1 = omp_get_wtime();
+    reference_matrix = gen_matrix(tile_size);
 
     clip_index = 0;
 
@@ -97,16 +171,7 @@ void fake_dpotrf_data::reload()
               );
     }
 
-    double t2 = omp_get_wtime();
-
-    reload_time = t2 - t1;
-
     return;
-}
-
-double fake_dpotrf_data::get_reload_time()
-{
-    return reload_time;
 }
 
 double *fake_dpotrf_data::gen_matrix(int n)
