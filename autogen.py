@@ -20,14 +20,6 @@ cpp_includes = '#include "profile.h"\n' \
 
 four_space = '    '
 
-autotune_header_str = \
-'''#include "profile.h"
-
-extern class Profile profile;
-
-using namespace std;
-'''
-
 class core_class:
     
     def __init__(self, rtype, name, args):
@@ -371,20 +363,10 @@ dare_base::dare_base()
     {
         add_node[i] = 1;
     }
-    ''' \
-           )
 
-    f.write( \
-    '''
-    /*set atomic counters*/
-    for(int i = 0; i < TABLE_SIZE; i++)
-    {
-        core_count[i] = 0;
-    }
-    
     return;
 }
-''' \
+    ''' \
            )
 
     #write the destructor. It must call kernel_to_file if default behavior
@@ -539,14 +521,13 @@ def gen_wrapper(c, config):
 
 def profile_wrap(c, spaces):
         
-    wrap_above = '''int count = profile.core_count[{name}]++;
-
-    {sp}profile.track_kernel((unsigned long){name}, count, omp_get_wtime())'''\
+    wrap_above = ''' 
+    {sp}profile.track_kernel((unsigned long){name}, omp_get_wtime())'''\
     .format(sp = spaces, name = c.name.upper())
 
     wrap_below = \
     '''
-    {sp}profile.track_kernel((unsigned long){name}, count, omp_get_wtime())'''\
+    {sp}profile.track_kernel((unsigned long){name}, omp_get_wtime())'''\
     .format(sp = spaces, name = c.name.upper())
 
     wrap = wrap_class(wrap_above, wrap_below)
@@ -582,9 +563,9 @@ def autotune_wrap_call(c, call, root):
 
     #Enclose "inner" within autotune conditional
     string = '''\
-    int random_n = rand() % profile.kernel_stride + 1;
+    int random_n = rand() % autotune.kernel_stride + 1;
 
-    if(random_n <= profile.kernel_run)
+    if(random_n <= autotune.kernel_run)
     {{
         {inside_conditional}
     }}
@@ -628,13 +609,15 @@ def trace_header(config):
 def stdin_version():
     
     string = \
-'''
-#include "profile.h"
+''' #include "profile.h"
+#include "autotune.h"
 #include <sstream>
 #include <iostream>
 #include <string>
 
 extern class Profile profile;
+
+extern class Autotune autotune;
 
 using namespace std;
 
@@ -663,7 +646,7 @@ void parse_stdin()
 
         if(tag == "tile_size")
         {
-            ss >> profile.tile_size;
+            ss >> autotune.tile_size;
         }
 
         else if(tag == "kernel_fraction")
@@ -672,9 +655,9 @@ void parse_stdin()
 
             int colon = kfrac.find(':');
 
-            profile.kernel_run = atoi(kfrac.substr(0, colon).c_str());
+            autotune.kernel_run = atoi(kfrac.substr(0, colon).c_str());
 
-            profile.kernel_stride = atoi(kfrac.substr(colon + 1).c_str());
+            autotune.kernel_stride = atoi(kfrac.substr(colon + 1).c_str());
         }
 
         else
@@ -705,10 +688,12 @@ extern "C" int plasma_init()
 def no_stdin_version():
     
     string = \
-'''
-#include "profile.h"
+'''#include "profile.h"
+#include "autotune.h"
 
 extern class Profile profile;
+
+extern class Autotune autotune;
 
 using namespace std;
 
@@ -731,7 +716,7 @@ def last_half(root):
 
     if(tile_size != 'stdin'):
 
-        plasma_init_str = 'profile.tile_size = {ts};\n'\
+        plasma_init_str = 'autotune.tile_size = {ts};\n'\
                            .format(ts = tile_size)
 
     kf = root.find('kernel_fraction').text.strip()
@@ -746,21 +731,21 @@ def last_half(root):
 
         plasma_init_str += \
         '''
-        profile.kernel_run = {krun};
+        autotune.kernel_run = {krun};
 
-        profile_kernel_stride = {kstride};
+        autotune.kernel_stride = {kstride};
         
         '''.format(krun = kernel_run, kstride = kernel_stride)
 
     plasma_init_str += \
     '''
-    plasma_set(PlasmaNb, profile.tile_size);
+    plasma_set(PlasmaNb, autotune.tile_size);
 
     plasma_get(PlasmaNb, &tile_size);
 
     printf(
           "tile_size: %d kernel_run: %d kernel_stride: %d\\n",
-          tile_size, profile.kernel_run, profile.kernel_stride
+          tile_size, autotune.kernel_run, autotune.kernel_stride
           );
 
     return ret_val;
@@ -877,7 +862,9 @@ def cmake_add_library(root):
            hooks.cpp
            autogen.cpp
            profile.cpp
+           autotune.cpp
            dare_base.cpp
+           fake_data_test/fake_data.cpp
            )'''
     
     spaces = len('add_library') * ' '

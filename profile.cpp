@@ -23,7 +23,7 @@ double Profile::last_kernel_time(int thread_num)
 Remove the "t" parameter once you've stabilized this code, replace with
 omp_get_wtime() - do it in the function call so you don't waste time jumping
 */
-void Profile::track_kernel(uint64_t kernel_type, uint64_t invocation_id, double t)
+void Profile::track_kernel(uint64_t kernel_type, double t)
 {
     int thread_id = omp_get_thread_num();
 
@@ -37,8 +37,6 @@ void Profile::track_kernel(uint64_t kernel_type, uint64_t invocation_id, double 
         knode.t_start = t;
         
         knode.t_end = -1;
-        
-        knode.task_id = invocation_id;
         
         knode.thread_id = thread_id;
         

@@ -34,6 +34,7 @@
 
     <include_dirs>
     <dir> /Users/hhughe11/research/dare </dir>
+    <dir> /Users/hhughe11/research/dare/fake_data_test </dir>
     <dir> /opt/intel/mkl/include </dir>
     </include_dirs>
 

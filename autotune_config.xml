@@ -7,8 +7,13 @@
     <tile_size> stdin </tile_size>    
     <include_dirs>
     <dir> /opt/intel/mkl/include </dir>
+    <dir> /Users/hhughe11/research/dare/fake_data_test </dir>
+    <dir> /Users/hhughe11/research/dare </dir>
     </include_dirs>
     <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>
     <cpp_compiler> /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0 </cpp_compiler>
 
+    <kernel_list>
+    <kernel> core_dpotrf </kernel>
+    </kernel_list>
 </config>

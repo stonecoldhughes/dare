@@ -1,3 +1,12 @@
+fake data integration plan:
+    
+    1. Have an uninitialized pointer to fake data memory.
+    2. When it is called for the first time, initialize the whole thing
+       and time it. Set the initializing thread.
+
+    Do you really need all those core_blas function pointers to be in autotune? 
+    I think so yeah. Autotune will call them instead of profile
+
 Code:
 
     random_n = rand() ...

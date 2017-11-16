@@ -1,3 +1,18 @@
+Integrate into dare:
+    
+    is there a way to round robin it like in main.cpp?
+
+    you don't even need the invocation id in profile class...
+    take it out. Repurpose that into an "iterations" counter
+    and replicate main.cpp's usage. Build that into the fake_data
+    class.
+
+    iterations[thread_num][kernel_type]
+
+    is there a faster way to make a fake_data container? 
+
+    do we know up front which kernels will be called? Probably not.
+
 Implement:
     
     1. Busy-waiting for clip times

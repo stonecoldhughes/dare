@@ -6,9 +6,9 @@ using namespace std;
 
 int n_args = 5;
 
-void run(class fake_dpotrf_data *fake_dpotrf_data)
+void run(class fake_dpotrf_data &fake_dpotrf_data)
 {
-    double *m = fake_dpotrf_data->tile();
+    double *m = fake_dpotrf_data.tile();
 
     if(m != NULL)
     {
@@ -16,9 +16,9 @@ void run(class fake_dpotrf_data *fake_dpotrf_data)
 
         int ret_val = core_dpotrf(
                 PlasmaLower,
-                fake_dpotrf_data->get_tile_size(),
+                fake_dpotrf_data.get_tile_size(),
                 m,
-                fake_dpotrf_data->get_tile_size()
+                fake_dpotrf_data.get_tile_size()
                 );
 
         double t2 = omp_get_wtime();
@@ -27,18 +27,18 @@ void run(class fake_dpotrf_data *fake_dpotrf_data)
 
         printf("core_dpotrf %lf\n", elapsed);
 
-        fake_dpotrf_data->append_time(elapsed);
+        fake_dpotrf_data.append_time(elapsed);
     }
 
     return;
 }
 
-void busy_wait(class fake_dpotrf_data *fake_dpotrf_data)
+void busy_wait(class fake_dpotrf_data &fake_dpotrf_data)
 {
-    double t = fake_dpotrf_data->tile_time();
+    double t = fake_dpotrf_data.tile_time();
 
     double t1 = omp_get_wtime();
-    fake_dpotrf_data->busy_wait(t);
+    fake_dpotrf_data.busy_wait(t);
     double t2 = omp_get_wtime();
 
     printf("busy-wait for: %lf actual: %lf\n", t, t2 - t1);
@@ -67,22 +67,27 @@ int main(int argc, char **argv)
     int clip_size = atoi(argv[4]);
 
 
-    double t = omp_get_wtime();
-    class fake_dpotrf_data *fake_dpotrf_data = new class fake_dpotrf_data(
-                                                                         clip_size,
-                                                                         tile_size,
-                                                                         window_size
-                                                                         );
-    double elapsed = omp_get_wtime() - t;
+    double t1 = omp_get_wtime();
+    class fake_dpotrf_data fake_dpotrf_data(
+                                           clip_size,
+                                           tile_size,
+                                           window_size
+                                           );
+    double init_time = omp_get_wtime() - t1;
     
-    printf("fake_dpotrf_data creation took: %lf\n", elapsed);
+    printf(
+          "fake_data init time: %lf\n", 
+          init_time
+          );
+
+    fake_dpotrf_data.init_time = init_time;
 
     /* print title lines */
-    printf("clip_size %d\n", fake_dpotrf_data->get_clip_size());
+    printf("clip_size %d\n", fake_dpotrf_data.get_clip_size());
 
-    printf("tile_size %d\n", fake_dpotrf_data->get_tile_size());
+    printf("tile_size %d\n", fake_dpotrf_data.get_tile_size());
 
-    printf("window_size %d\n", fake_dpotrf_data->get_max_window_size());
+    printf("window_size %d\n", fake_dpotrf_data.get_max_window_size());
 
     printf("core_dpotrf <time>\n");
 
@@ -90,14 +95,14 @@ int main(int argc, char **argv)
     for(int i = 0; i < iterations; ++i)
     {
         /* Clip time isn't full enough */
-        if(fake_dpotrf_data->tile_times_empty())
+        if(fake_dpotrf_data.tile_times_empty())
         {
             /* get a fake data matrix and run */
             printf("not full enough ");
             run(fake_dpotrf_data);
         }
 
-        else if(fake_dpotrf_data->clip_empty())
+        else if(fake_dpotrf_data.clip_empty())
         {
             /* busy wait */
             printf("clip full ");
@@ -107,7 +112,7 @@ int main(int argc, char **argv)
         else
         {
             /* Captain! Change to get_max_window_size */
-            if(!(i % (2 * fake_dpotrf_data->get_max_window_size() + 1)))
+            if(!(i % (2 * fake_dpotrf_data.get_max_window_size() + 1)))
             {
                 /* get fake data matrix and run */
                 printf("random run ");
@@ -122,8 +127,6 @@ int main(int argc, char **argv)
             }
         }
     }
-
-    delete fake_dpotrf_data;
 
     return 0;
 }

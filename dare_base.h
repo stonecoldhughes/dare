@@ -7,7 +7,10 @@
 #include "dlfcn.h"
 #include "stdio.h"
 #include "stdint.h"
+#ifndef AUTOGEN_TYPES_H
+#define AUTOGEN_TYPES_H
 #include "autogen_types.h"
+#endif
 
 using namespace std;
 
@@ -16,10 +19,8 @@ class kernel_node
     public:
         double t_start;
         double t_end; 
-        uint64_t task_id;
         uint64_t thread_id;
         int kernel_type;
-        string kernel;
 };
 
 
@@ -34,9 +35,6 @@ class dare_base
         /* Contains function pointers to core_blas cores */
         void (*core[TABLE_SIZE])();
 
-        /* Contains unique identifiers for each kernel invocation */
-        atomic<unsigned long> core_count[TABLE_SIZE];
-        
         /* The location where plasma symbols can be read from */
         void (*plasma_init_ptr)();
 

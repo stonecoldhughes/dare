@@ -1,6 +1,10 @@
 #include <string>
 #include "omp.h"
+#ifndef AUTOGEN_TYPES_H
+#define AUTOGEN_TYPES_H
 #include "autogen_types.h"
+#endif
+
 
 using namespace std;
 
@@ -29,6 +33,10 @@ class fake_data
         int get_clip_size();
 
         int get_tile_size();
+
+        double init_time;
+
+        int init_thread;
     
     protected:
         
