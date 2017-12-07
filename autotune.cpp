@@ -17,8 +17,12 @@ Autotune::Autotune()
         }
     }
 
-    /* initialize fake data */
-    data = new unordered_map<int, class fake_data>*[num_threads];
+    data = new unordered_map<int, class fake_data*>*[num_threads];
+    
+    for(int i = 0; i < num_threads; ++i)
+    {
+        data[i] = new unordered_map<int, class fake_data*>;
+    }
 
     return;
 }
@@ -33,15 +37,19 @@ Autotune::~Autotune()
 
     delete[] iterations;
 
-    /* delete fake data bank */
+    /* delete fake data */
     for(int i = 0; i < num_threads; ++i)
     {
-        if(data[i] != NULL)
+        for(
+           unordered_map<int, class fake_data*>::iterator iter = data[i]->begin();
+           iter != data[i]->end();
+           ++iter
+           )
         {
-            data[i]->clear();
-
-            delete data[i];
+            delete iter->second;
         }
+
+        delete data[i];
     }
 
     delete[] data; 

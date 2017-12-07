@@ -16,4 +16,7 @@
     <kernel_list>
     <kernel> core_dpotrf </kernel>
     </kernel_list>
+    <autotune_run_flag> 5 </autotune_run_flag>
+    <clip_size> 5 </clip_size>
+    <max_window_size> 2 </max_window_size>
 </config>

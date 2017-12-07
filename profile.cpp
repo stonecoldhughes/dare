@@ -12,9 +12,11 @@ Profile::~Profile()
 }
 
 /* returns the time for the last kernel that was run */
-double Profile::last_kernel_time(int thread_num)
+double Profile::last_kernel_time()
 {
-    class kernel_node &knode = kernel_vec[thread_num]->back();
+    int thread_id = omp_get_thread_num();
+
+    class kernel_node &knode = kernel_vec[thread_id]->back();
 
     return knode.t_end - knode.t_start;
 }

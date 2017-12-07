@@ -1,3 +1,7 @@
+Refactoring of autogen.py:
+    
+    1. Determine a clear separation of tasks.
+
 Changes:
     
     replace kernel_data with an array of vectors.

@@ -3,9 +3,9 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
         
     include_directories(
                    /Users/hhughe11/plasma-17.1/include
-                   /Users/hhughe11/research/dare
-                   /Users/hhughe11/research/dare/fake_data_test
                    /opt/intel/mkl/include
+                   /Users/hhughe11/research/dare/fake_data_test
+                   /Users/hhughe11/research/dare
                    )
 
     project(optimize C CXX)

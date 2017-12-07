@@ -14,6 +14,8 @@ class fake_data
 {
     public:
         
+        fake_data();
+
         fake_data(int clip_size, int tile_size, int winsize);
 
         ~fake_data();

@@ -23,14 +23,20 @@ class Autotune : public dare_base
         */
         int kernel_run;
 
+        int autotune_run_flag;
+
         int kernel_stride;
 
         int tile_size;
+
+        int clip_size;
+
+        int max_window_size;
     
         /* each thread has a counter for each kernel type */
         unsigned int **iterations;
 
-        /* containers for fake_data. Each is num_threads long */
-        /* don't initialize this until within plasma_in*/
-        unordered_map<int, class fake_data> **data;
+        /* pointer to num_threads unordered maps */
+        /* data[thread_num][CORE_TYPE] = fake_data class for that core type */
+        unordered_map<int, class fake_data*> **data;
 };

@@ -2,11 +2,18 @@
 #include <cstdlib>
 #include "fake_data.h"
 
+#include <thread>
+#include <chrono>
+
 #define ELEMENT_MAX 256
 
 using namespace std;
 
 /* Base class fake_data object methods */
+fake_data::fake_data()
+{
+    return;
+}
 
 fake_data::fake_data(int _clip_size, int _tile_size, int _winsize)
     :
@@ -15,7 +22,8 @@ fake_data::fake_data(int _clip_size, int _tile_size, int _winsize)
     tile_size(_tile_size),
     t_index(-1),
     start(1),
-    max_window_size(_winsize)
+    max_window_size(_winsize),
+    window_size(0)
 {
     srand(time(NULL));
 
@@ -58,6 +66,18 @@ int fake_data::tile_times_empty()
 
 double fake_data::tile_time()
 {
+    /* Captain! Replace the modulo with an if-statment */
+    /* Modulus operator is very slow */
+    printf(
+          "t_index: %d window_size: %d start: %d max_window_size: %d clip_index: %d\n",
+          t_index,
+          window_size,
+          start,
+          max_window_size,
+          clip_index
+          );
+
+    this_thread::sleep_for (std::chrono::seconds(1));
     int x = ((++t_index %= window_size) + start);
     
     return clip_times[x];
@@ -77,6 +97,7 @@ void fake_data::append_time(double t)
 {
     /* After tile is called, clip_index will be incremented */
     /* Subtract 1 to get the index of the round that was just expended */
+    printf("append_time called\n");
     int i = clip_index - 1;
 
     clip_times[i] = t;
@@ -124,10 +145,10 @@ fake_dpotrf_data::~fake_dpotrf_data()
     return;
 }
 
+/* Tile should not be called if clip_empty() returns true */
+/* This check should always be performed */
 double *fake_dpotrf_data::tile()
 {
-    if(clip_index == clip_size) return NULL;
-
     return matrix_clip[clip_index++];
 }
 
@@ -159,8 +180,6 @@ in-place or empty, reload the clip with copies of it.
 void fake_dpotrf_data::load_matrix_clip()
 {
     reference_matrix = gen_matrix(tile_size);
-
-    clip_index = 0;
 
     for(int i = 0; i < clip_size; ++i)
     {

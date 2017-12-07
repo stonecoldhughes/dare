@@ -16,5 +16,5 @@ class Profile : public dare_base
         void track_kernel(uint64_t kernel_type, double t);
         
         /* returns execution time of the last kernel run by a given thread */
-        double last_kernel_time(int thread_num);
+        double last_kernel_time();
 };

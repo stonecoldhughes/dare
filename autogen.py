@@ -20,11 +20,13 @@ cpp_includes = '#include "profile.h"\n' \
 
 four_space = '    '
 
+#Captain! Refactor the core class. Everything needs to be in this class
 class core_class:
     
     def __init__(self, rtype, name, args):
         self.rtype = rtype
         self.name = name
+        self.fake_data_class = ''
         self.args = args
 
 class rgx_obj_class:
@@ -282,13 +284,15 @@ def write_autogen_cpp(f, core_kernel_list, root, mode_str):
     #Check for default case
     use_default_tag = root.find('use_default')
     
-    if(use_default_tag != None):
-        if(int(use_default_tag.text.strip()) == 1):
-            use_default = 1
-        else:
-            use_default = 0 
-    else:
-        use_default = 0 
+    if(use_default_tag == None):
+        print('use default tag not found: exiting')
+        sys.exit()
+
+    use_default = int(use_default_tag.text.strip())
+    
+    if(use_default != 1 and use_default != 0):
+        print('use default tag must be either 1 or 0: exiting')
+        sys.exit()
     
     #Obtain the top-level directory for PLASMA
     plasma_dir = root.find('plasma_dir').text.strip()
@@ -379,8 +383,6 @@ dare_base::~dare_base()
     /* these functions also clear the vector in case file is written to
     multiple times*/
 
-    /* remove kernel_to_file once you verify information is the same */
-
     if(default_output)
     {
         dump_data();
@@ -414,25 +416,45 @@ def arg_strip(string, spaces):
 
     return arg_str
 
-def function_call(c, arg_str, spaces):
+def function_call(c, arg_str, spaces, mode_str):
     
     #Create the function call
     
     arg_spaces = ''
 
-    if(c.rtype == 'void'):
+    call = ''
+
+    if(mode_str == 'trace'):
+
+        if(c.rtype == 'void'):
         
-        call = '{sp}(({name}_hook_type)profile.core[{upper}])(\n'\
-        .format(sp = spaces, name = c.name, upper = c.name.upper())
+            call = '{sp}(({name}_hook_type)profile.core[{upper}])(\n'\
+            .format(sp = spaces, name = c.name, upper = c.name.upper())
         
-        spaces = (len(call) + 2) * ' '
+            spaces = (len(call) + 2) * ' '
     
-    else:
+        else:
         
-        call = '{sp}ret_val = (({name}_hook_type)profile.core[{upper}])(\n'\
-        .format(sp = spaces, name = c.name, upper = c.name.upper())
+            call = '{sp}ret_val = (({name}_hook_type)profile.core[{upper}])(\n'\
+            .format(sp = spaces, name = c.name, upper = c.name.upper())
         
-        arg_spaces = (len(call) + 2) * ' '
+            arg_spaces = (len(call) + 2) * ' '
+
+    elif(mode_str == 'autotune'):
+
+        if(c.rtype == 'void'):
+        
+            call = '{sp}(({name}_hook_type)autotune.core[{upper}])(\n'\
+            .format(sp = spaces, name = c.name, upper = c.name.upper())
+        
+            spaces = (len(call) + 2) * ' '
+    
+        else:
+        
+            call = '{sp}ret_val = (({name}_hook_type)autotune.core[{upper}])(\n'\
+            .format(sp = spaces, name = c.name, upper = c.name.upper())
+        
+            arg_spaces = (len(call) + 2) * ' '
         
     call += arg_strip(arg_str, arg_spaces) + arg_spaces + ');'
 
@@ -551,17 +573,16 @@ def trace_wrap_call(c, call, config):
 
     return string
 
-#Captain! This searches the root tag every time
-#That is atrocious programming. Fix it
 def autotune_wrap_call(c, call, root):
 
     wrap = profile_wrap(c, four_space)
 
     #Function call enclosed in default profile-class timing wrappers
-    inner = '{0};\n\n{1}\n{2};\n' \
+    wrapped_call = '{0};\n\n{1}\n{2};\n' \
              .format(wrap.above, call, wrap.below)
 
-    #Enclose "inner" within autotune conditional
+    #Begin replacing things here
+    #Enclose "wrapped_call" within autotune conditional
     string = '''\
     int random_n = rand() % autotune.kernel_stride + 1;
 
@@ -569,7 +590,7 @@ def autotune_wrap_call(c, call, root):
     {{
         {inside_conditional}
     }}
-    '''.format(inside_conditional = inner)
+    '''.format(inside_conditional = wrapped_call)
 
     return string
 
@@ -609,7 +630,7 @@ def trace_header(config):
 def stdin_version():
     
     string = \
-''' #include "profile.h"
+'''#include "profile.h"
 #include "autotune.h"
 #include <sstream>
 #include <iostream>
@@ -708,7 +729,8 @@ extern "C" int plasma_init()
 
     return string
 
-def last_half(root):
+#Completes the last half of plasma_init() function
+def last_half(root, core_kernel_list):
 
     tile_size = root.find('tile_size').text.strip()
 
@@ -748,43 +770,162 @@ def last_half(root):
           tile_size, autotune.kernel_run, autotune.kernel_stride
           );
 
-    return ret_val;
-}
+    {fake_init}
 
-'''
+    return ret_val;
+}}
+
+'''.format(fake_init = init_fake_data(root, core_kernel_list))
+
     return plasma_init_str
 
-def plasma_init_hook(root):
+#Populates "data" with all the fake data objects
+def init_fake_data(root, core_kernel_list):
+            
+    kernel_list_tag = root.find('kernel_list')
+    
+    if(kernel_list_tag == None):
+        
+        return ''
+
+    kernel_list_items = kernel_list_tag.findall('kernel')
+
+    kernel_list = []
+
+    #Obtain the list of items fake_data will be needed for
+    for k in kernel_list_items:
+        
+        kernel_list.append(k.text.strip())
+    
+    #find the autotune fraction
+    autotune_run_flag_tag = root.find('autotune_run_flag')
+
+    #Autotune ratio determines when a real run or fake run will occur
+    if(autotune_run_flag_tag == None):
+    
+        print('autotune_run_flag not found. Exiting.')
+        
+        sys.exit()
+    
+    autotune_run_flag = int(autotune_run_flag_tag.text.strip())
+
+    #set autotune class's clip_size and max_window_size
+    clip_size_tag = root.find('clip_size')
+
+    if(clip_size_tag == None):
+        
+        print('clip_size not present. Exiting')
+
+        sys.exit()
+
+    clip_size = clip_size_tag.text.strip()
+
+    max_window_size_tag = root.find('max_window_size')
+
+    if(max_window_size_tag == None):
+
+        print('max_window_size not present. Exiting')
+
+        sys.exit()
+
+    max_window_size = max_window_size_tag.text.strip()
+
+    init_block = fake_data_classes(kernel_list, core_kernel_list)
+
+    string = \
+    '''
+    autotune.clip_size = {clip_size};
+
+    autotune.max_window_size = {max_window_size};
+
+    autotune.autotune_run_flag = {autotune_run_flag};
+    
+    /* Populate each map with the kernels specified in the config file */
+    for(int i = 0; i < autotune.num_threads; ++i)
+    {{
+        {init_block}
+    }}
+    '''.format(\
+              init_block = init_block,\
+              max_window_size = max_window_size,\
+              clip_size = clip_size, \
+              autotune_run_flag = autotune_run_flag\
+              )
+
+    return string
+
+#Creates fake data classes
+def fake_data_classes(kernel_list, core_kernel_list):
+    
+    string = ''
+
+    for k in kernel_list:
+        
+        if(k not in core_kernel_list):
+            
+            print('unknown kernel_type detected. Update autogen.py. Exiting')
+
+            sys.exit()
+
+        elif(k == 'core_dpotrf'):
+            
+            print('creating fake_data for core_dpotrf...')
+
+            string += init_fake_dpotrf_data(core_kernel_list)
+
+    return string
+
+#Create the constructor for fake_dpotrf_data initialization here
+def init_fake_dpotrf_data(core_kernel_list):
+    
+    string = \
+    '''
+        autotune.data[i]->emplace(
+                                 CORE_DPOTRF,
+                                 new class fake_dpotrf_data(
+                                                           autotune.clip_size,
+                                                           autotune.tile_size,
+                                                           autotune.max_window_size
+                                                           )
+                                 );
+    '''
+
+    core_kernel_list['core_dpotrf'].fake_data_class = 'fake_dpotrf_data'
+
+    return string
+
+
+def plasma_init_hook(root, core_kernel_list):
 
     stdin_tag = root.find('use_stdin')
 
-    if(stdin_tag != None):
+    if(stdin_tag == None):
         
-        stdin_str = int(stdin_tag.text.strip())
+        print('use_stdin tag must be present')
 
-        if(stdin_str == 1):
-            
-            plasma_init_str = stdin_version()
+        sys.exit()
 
-            plasma_init_str += last_half(root)
+        
+    stdin_flag = int(stdin_tag.text.strip())
+
+    if(stdin_flag == 1):
+        
+        plasma_init_str = stdin_version()
+
+        plasma_init_str += last_half(root, core_kernel_list)
 
 
-        elif(stdin_str == 0):
-            
-            plasma_init_str = no_stdin_version()
-
-            plasma_init_str += last_half(root)
-
-        else:
-            
-            print('stdin_str must be 1 or 0')
-
-            sys.exit()
-    else:
+    elif(stdin_flag == 0):
         
         plasma_init_str = no_stdin_version()
 
-        plasma_init_str += last_half(root)
+        plasma_init_str += last_half(root, core_kernel_list)
+
+    else:
+        
+        print('stdin_flag must be 1 or 0')
+
+        sys.exit()
 
     return plasma_init_str
 
@@ -802,45 +943,197 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
         print('autotune mode')
 
-        f.write(plasma_init_hook(root))
+        f.write(plasma_init_hook(root, core_kernel_list))
 
-    #Write all the extern "C" kernels. Same for both trace and autotune mode.
-    for c in core_kernel_list.values():
+    write_function_hooks(f, core_kernel_list, mode_str)
+
+def hook_definition(c):
+    
+    #The hook definition
+    string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
+    
+    spaces = (len(string) - 2) * ' '
+    
+    arg_str = breakup(c.args, spaces)
+    
+    string += arg_str + '\n' + spaces + ')\n{\n'
         
-        #The hook definition
-        string = 'extern "C" {0} {1}(\n'.format(c.rtype, c.name)
+    if(c.rtype != 'void'):
         
-        spaces = (len(string) - 2) * ' '
+        string += four_space + '{data_type} ret_val;\n\n'.format( \
+                                                data_type = c.rtype)
+
+    return string
+
+
+def hook_trace_body(c, mode_str):
+    
+    arg_str = breakup(c.args, ' ')
+
+    call = function_call(c, arg_str, four_space, mode_str)
+
+    string = trace_wrap_call(c, call, config)
+    
+    #return statement and bracket
+    if(c.rtype == 'void'):
         
-        arg_str = breakup(c.args, spaces)
+        string += ('\n' + four_space + 'return;\n}\n\n')
+    
+    else:
         
-        string += arg_str + '\n' + spaces + ')\n{\n'
+        string += ('\n' + four_space + 'return ret_val;\n}\n\n')
 
-        if(c.rtype != 'void'):
-            
-            #call = four_space + '{0} ret_val;\n\n'.format(c.rtype) + four_space + call
-            string += four_space + '{data_type} ret_val;\n\n'.format(data_type = c.rtype)
+    return string
 
-        #The actual function call within the hook
-        call = function_call(c, arg_str, four_space)
+#Captain!
+def fake_data_run(c):
+    
+    string = ''
 
-        #Wrap the call in trace wrappers
-        if(mode_str == 'trace'):
+    if(c.name == 'core_dpotrf'):
+        
+        string = \
+        '''
+            profile.track_kernel({cname}, omp_get_wtime());
+            int ret_val = core_dpotrf(
+                    PlasmaLower,
+                    ptr->get_tile_size(),
+                    ptr->tile(),
+                    ptr->get_tile_size()
+                    );
 
-            string += trace_wrap_call(c, call, config)
+            profile.track_kernel({cname}, omp_get_wtime());
+            ptr->append_time(profile.last_kernel_time());
+        '''.format(cname = c.name.upper())
 
-        elif(mode_str == 'autotune'):
+    else:
 
-            string += autotune_wrap_call(c, call, root)
+        print('instructions to run \"{cname}\" with fake_data not found')
 
-        #Conclude the function body with the proper return statement and bracket
+        print('check \"fake_data_run\" in autogen.py. Exiting')
+
+        sys.exit()
+
+    return string
+
+def fake_data_busy_wait(c):
+
+    string = ''
+    
+    if(c.name == 'core_dpotrf'):
+        
+        string = \
+        '''
+            double t = ptr->tile_time();
+            profile.track_kernel({cname}, omp_get_wtime());
+            ptr->busy_wait(t);
+            profile.track_kernel({cname}, omp_get_wtime());
+        '''.format(cname = c.name.upper())
+
+    else:
+
+        print('instructions to run \"{cname}\" with fake_data not found')
+
+        print('check \"fake_data_run\" in autogen.py. Exiting')
+
+        sys.exit()
+
+    return string
+
+def fake_data_framework(c):
+    
+    string = '''\
+    int random_n = rand() % autotune.kernel_stride + 1;
+
+    if(random_n <= autotune.kernel_run)
+    {{
+        int thread_num = omp_get_thread_num();
+
+        {fake_data_type} *ptr = 
+        (class {fake_data_type}*)((*autotune.data[thread_num])[{cname}]);
+
+        if(ptr->tile_times_empty())
+        {{
+            {run}
+        }}
+
+        else if(ptr->clip_empty())
+        {{
+            {busy_wait}
+        }}
+
+        else
+        {{
+            if(++autotune.iterations[thread_num][{cname}] == 
+               autotune.autotune_run_flag)
+            {{
+                autotune.iterations[thread_num][{cname}] = -1;
+
+                {run}
+            }}
+
+            else
+            {{
+                {busy_wait}
+            }}
+        }}
+    }}
+
+    return PlasmaSuccess;
+}}
+    '''.format(
+              fake_data_type = c.fake_data_class,\
+              cname = c.name.upper(),\
+              run = fake_data_run(c),\
+              busy_wait = fake_data_busy_wait(c)\
+              )
+
+    return string
+    
+    
+
+def hook_autotune_body(c, mode_str):
+
+    arg_str = breakup(c.args, ' ')
+
+    string = ''
+    
+    #Does this kernel need to access fake data or not?
+    if(c.fake_data_class != ''):
+
+        string += fake_data_framework(c)
+
+    else:
+
+        call = function_call(c, arg_str, four_space, mode_str)
+    
+        string += autotune_wrap_call(c, call, root)
+        
         if(c.rtype == 'void'):
             
             string += ('\n' + four_space + 'return;\n}\n\n')
         
         else:
             
-            string += ('\n' + four_space + 'return PlasmaSuccess;\n}\n\n')
+            string += ('\n' + four_space + 'return ret_val;\n}\n\n')
+
+    return string
+
+def write_function_hooks(f, core_kernel_list, mode_str):
+
+    #Write all the extern "C" kernels. Same for both trace and autotune mode.
+    for c in core_kernel_list.values():
+        
+        string = hook_definition(c)
+
+        #Wrap the call in trace wrappers
+        if(mode_str == 'trace'):
+
+            string += hook_trace_body(c, mode_str)
+
+        elif(mode_str == 'autotune'):
+
+            string += hook_autotune_body(c, mode_str)
 
         f.write(string)
 

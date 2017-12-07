@@ -1,4 +1,4 @@
-salloc --job-name caffeine --nodes 1 bash
+alloc --job-name caffeine --nodes 1 bash
 
 salloc --job-name caffeine --nodelist a[00-09] --partition shared
 

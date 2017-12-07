@@ -37,6 +37,8 @@ class dare_base
 
         /* The location where plasma symbols can be read from */
         void (*plasma_init_ptr)();
+        
+        int num_threads;
 
     /* functions */
     protected:
@@ -57,7 +59,4 @@ class dare_base
         
         /* Whether or not the tracer is set to the default case */
         int default_output;
-
-        int num_threads;
-        
 };

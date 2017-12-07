@@ -1,3 +1,78 @@
+Tasks:
+    Time mod and if statements. Go back to fake data test to verify that it works.
+    autogenerate the fake data objects
+    pass thread_num as a parameter to all functions that use it?
+
+    In autogen.py, in autotune_wrap_call, change "inner"
+    to be returned from a proper function. 
+
+Code:
+    Note: each reference to fake_dpotrf_data will become
+    data[thread_num][CORE_DPOTRF]
+
+    int thread_num = omp_get_thread_num();
+
+    int random_n = rand() % autotune.kernel_stride + 1;
+
+    if(random_n <= autotune.kernel_run)
+    {
+
+        if(fake_dpotrf_data.tile_times_empty())
+        {
+            double *m = fake_dpotrf_data.tile();
+
+            profile.track();
+            int ret_val = core_dpotrf(
+                    PlasmaLower,
+                    fake_dpotrf_data.get_tile_size(),
+                    m,
+                    fake_dpotrf_data.get_tile_size()
+                    );
+
+            profile.track();
+            fake_dpotrf_data.append_time(profile.last_kernel_time());
+        }
+
+        else if(fake_dpotrf_data.clip_empty())
+        {
+            double t = fake_dpotrf_data.tile_time();
+            profile.track();
+            fake_dpotrf_data.busy_wait(t);
+            profile.track();
+        }
+
+        else
+        {
+            if(++autotune.iterations[thread_num][CORE_TYPE] == autotune.run_val)
+            {
+                autotune.iterations[thread_num][CORE_TYPE] = -1;
+
+                double *m = fake_dpotrf_data.tile();
+
+                profile.track();
+                int ret_val = core_dpotrf(
+                        PlasmaLower,
+                        fake_dpotrf_data.get_tile_size(),
+                        m,
+                        fake_dpotrf_data.get_tile_size()
+                        );
+
+                profile.track();
+                fake_dpotrf_data.append_time(elapsed);
+            }
+
+            else
+            {
+                double t = fake_dpotrf_data.tile_time();
+
+                /* Technically these are not needed and only present for testing */
+                profile.track_kernel();
+                fake_dpotrf_data.busy_wait(t);
+                profile.track_kernel();
+            }
+        }
+    }
+
 Integrate into dare:
     
     is there a way to round robin it like in main.cpp?
