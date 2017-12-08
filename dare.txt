@@ -1,3 +1,4 @@
+rename kernel_list in autotune_config.xml to data_dependency_kernels
 Refactoring of autogen.py:
     
     1. Determine a clear separation of tasks.

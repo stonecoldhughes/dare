@@ -33,51 +33,47 @@ class rgx_obj_class:
 
 class core_class:
     
-    def __init__(self, rtype, name, args, mode_str):
+    def __init__(self, rtype, name, args, data_dep_kernels, mode_str):
         
         self.rtype = rtype
         
         self.name = name
         
-        if(mode_str == 'autotune'):
-            
-            self.fake_data_class = '' 
+        #list of arguments with their data types
+        typed_arg_list = self.extract_typed_args(args)
 
-        #Only a member variable for testing purposes
-        self.typed_arg_list = self.extract_typed_args(args)
-
-        #Only a member variable for testing purposes
-        self.untyped_arg_list = self.extract_untyped_args(self.typed_arg_list)
+        #list or arguments without data types
+        untyped_arg_list = self.extract_untyped_args(typed_arg_list)
         
-        #Only a member variable for testing purposes
-        self.typedef_string = self.generate_typedef_string()
+        #typedef definition portion before the arguments
+        typedef_string = self.generate_typedef_string()
 
-        #Only a member variable for testing purposes
-        self.definition_string = self.generate_definition_string()
+        #function definition portion before the arguments
+        definition_string = self.generate_definition_string()
         
-        #Only a member variable for testing purposes
-        self.function_call_str = self.generate_function_call_string(mode_str)
+        #function call portion before the arguments
+        function_call_str = self.generate_function_call_string(mode_str)
 
         #express the typedef as a list
-        self.typedef_as_list = self.listify_function(self.typed_arg_list,\
-                                                     self.typedef_string)
+        typedef_as_list = self.listify_function(typed_arg_list,\
+                                                typedef_string)
 
         #express the typedef as a string
-        self.typedef = self.space_out(self.typedef_as_list, '')
+        self.typedef = self.space_out(typedef_as_list, '')
 
         #express the function definition as a list
-        self.function_def_as_list = self.listify_function(self.typed_arg_list,\
-                                                          self.definition_string)
+        function_def_as_list = self.listify_function(typed_arg_list,\
+                                                     definition_string)
 
         #express the function definition as a string
-        self.function_def = self.space_out(self.function_def_as_list, '')
+        self.function_def = self.space_out(function_def_as_list, '')
 
-        #express the function call as a list
-        self.function_call_as_list = self.listify_function(self.untyped_arg_list,\
-                                                           self.function_call_str)
-
-        #express the function call as a string for testing purposes
-        self.function_call = self.space_out(self.function_call_as_list, '    ')
+        #express the function call as a list. Will not be expressed as a string
+        #because it is not known how much space it will need to be tabbed over by
+        #Captain!
+        self.function_call_as_list = self.listify_function(untyped_arg_list,\
+                                                           function_call_str,\
+                                                           data_dep_kernels)
 
     def generate_typedef_string(self):
         
@@ -134,14 +130,46 @@ class core_class:
 
         return full_string
 
+    def modify_arg_list(self, arg_list):
+
+        if(self.name == 'core_dpotrf'):
+
+           n_pos = 1
+
+           A_pos = 2
+
+           lda_pos = 3
+
+           arg_list[n_pos] = 'ptr->get_tile_size()'
+
+           arg_list[A_pos] = 'ptr->tile()'
+
+           arg_list[lda_pos] = arg_list[n_pos]
+
+        else:
+            
+            print('unrecognized kernel listed as needing fake data. Exiting')
+
+            sys.exit()
+        
+        return
+
     #create each line of the function as a list element properly spaced
-    def listify_function(self, arg_list, call_string):
+    #if it needs to use fake data, implement that
+    def listify_function(self, arg_list, call_string, data_dep_kernels = None):
         
         f = []
 
         spaces = (len(call_string) - 2) * ' '
 
         f.append(call_string)
+
+        if(data_dep_kernels != None):
+
+            if(self.name in data_dep_kernels):
+                
+                #modify the arg list according to which name it is
+                self.modify_arg_list(arg_list)
 
         #Does not include final arg
         for arg in arg_list[:-1]:
@@ -160,36 +188,19 @@ class core_class:
 
         print('{cname}:'.format(cname = self.name))
 
-        print('typedef: {typedef}'.format(typedef = self.typedef_string))
-
         print('full typedef:')
 
         print(self.typedef)
 
-        print('function_call: {call}'.format(call = self.function_call_str))
-
         print('full function call:')
 
-        print(self.function_call)
-        
-        print('function_definition: {d}'\
-              .format(d = self.definition_string))
+        function_call = self.space_out(self.function_call_as_list, '    ')
 
+        print(function_call)
+        
         print('full function definition:')
 
         print(self.function_def)
-
-        print('typed args:')
-
-        for typed_arg in self.typed_arg_list:
-
-            print('arg: {arg}'.format(arg = typed_arg))
-
-        print('untyped args:')
-
-        for untyped_arg in self.untyped_arg_list:
-            
-            print('arg: {arg}'.format(arg = untyped_arg))
 
         return
 
@@ -243,7 +254,7 @@ def dump_file(string):
     
     return file_string
 
-def parse_hdr(hdr_file_string, mode_str):
+def parse_hdr(hdr_file_string, mode_str, data_dep_kernels):
     
     core_kernel_list = {}
 
@@ -256,9 +267,30 @@ def parse_hdr(hdr_file_string, mode_str):
             core_kernel_list[m.group(2)] = core_class(m.group(1),\
                                                       m.group(2),\
                                                       m.group(3),\
+                                                      data_dep_kernels,\
                                                       mode_str)
 
     return core_kernel_list
+
+#Creates a dictionary of function names and their associated fake_data subclass
+def find_data_dep_kernels(root):
+    
+    tag = root.find('kernel_list')
+    
+    if(tag == None):
+        
+        return ''
+
+    more_tags = tag.findall('kernel')
+    
+    data_dep_kernels = set()
+
+    #Obtain the list of items fake_data will be needed for
+    for k in more_tags:
+        
+        data_dep_kernels.add(k.text.strip())
+
+    return data_dep_kernels
 
 #Main code
 
@@ -303,8 +335,11 @@ for f in p.iterdir():
         
         hdr_file_string += dump_file(str(f))
 
+#Find the kernels with data dependencies and create a dictionary out of them
+data_dep_kernels = find_data_dep_kernels(root)
+
 #Create kernel list
-core_kernel_list = parse_hdr(hdr_file_string, mode_str)
+core_kernel_list = parse_hdr(hdr_file_string, mode_str, data_dep_kernels)
 
 #Test code
 for node in core_kernel_list.values():
