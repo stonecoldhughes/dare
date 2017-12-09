@@ -20,7 +20,6 @@ cpp_includes = '#include "profile.h"\n' \
 
 four_space = '    '
 
-#Captain! Refactor the core class. Everything needs to be in this class
 class core_class:
     
     def __init__(self, rtype, name, args):
@@ -929,6 +928,7 @@ def plasma_init_hook(root, core_kernel_list):
 
     return plasma_init_str
 
+#Captain!
 def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
     if(mode_str == 'trace'):
@@ -985,7 +985,6 @@ def hook_trace_body(c, mode_str):
 
     return string
 
-#Captain!
 def fake_data_run(c):
     
     string = ''
