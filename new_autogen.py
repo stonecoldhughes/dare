@@ -50,9 +50,9 @@ dare_base::dare_base()
 
     /* Obtain a handle to the core_blas library */
     void *core_blas_file = dlopen(
-                            "{prefix}libcoreblas.so", 
-                            RTLD_LAZY
-                           );
+                                 "{prefix}libcoreblas.so", 
+                                 RTLD_LAZY
+                                 );
 
     if(core_blas_file == NULL) {{printf("core_blas_file null\\n"); exit(0);}}
     
@@ -129,6 +129,71 @@ dare_base::~dare_base()
 }
 '''
 
+parse_stdin_string = \
+'''#include "profile.h"
+#include "autotune.h"
+#include <sstream>
+#include <iostream>
+#include <string>
+
+extern class Profile profile;
+
+extern class Autotune autotune;
+
+using namespace std;
+
+/* Obtains variable number of arguments from stdin */
+void parse_stdin()
+{
+    int num_args;
+
+    string input;
+
+    string tag;
+
+    string kfrac;
+
+    stringstream ss;
+
+    getline(cin, input);
+
+    ss.str(input);
+
+    ss >> num_args;
+
+    for(int i = 0; i < num_args; ++i)
+    {
+        ss >> tag;
+
+        if(tag == "tile_size")
+        {
+            ss >> autotune.tile_size;
+        }
+
+        else if(tag == "kernel_fraction")
+        {
+            ss >> kfrac;
+
+            int colon = kfrac.find(':');
+
+            autotune.kernel_run = atoi(kfrac.substr(0, colon).c_str());
+
+            autotune.kernel_stride = atoi(kfrac.substr(colon + 1).c_str());
+        }
+
+        else
+        {
+            printf("unrecognized stdin data tag\\n");
+
+            exit(0);
+        }
+    }
+
+    return;
+}
+'''
+
+
 #Classes
 class rgx_obj_class:
     
@@ -140,6 +205,135 @@ class rgx_obj_class:
         r'\s*(\w*\n?)\s+(core_(?!omp)\w+)\s*\(([^;]*)\)')
         
         self.arg_regex = re.compile(r'(.*) \**(.*)')
+
+class wrap_class:
+    
+    def __init__(self, root, tag_string):
+        
+        tag = root.find(tag_string)
+
+        if(tag == None):
+            
+            print('{tag} not found. Exiting'.format(tag = tag_string))
+
+            sys.exit()
+
+        #Get the function's name
+        name_tag = tag.find('name')
+
+        if(name_tag == None):
+            
+            print('name tag not found under {tag}. Exiting'.format(tag = tag_string))
+
+            sys.exit()
+        
+        self.name = name_tag.text.strip()
+
+        #Get the function's declaration
+        decl_tag = tag.find('declaration')
+
+        if(decl_tag == None):
+            
+            print('declaration tag not found under {tag} Exiting'.format(tag = tag_string))
+
+            sys.exit()
+
+        self.declaration = decl_tag.text.strip()
+
+        #Get the function's file extension
+        filex_tag = tag.find('file_extension')
+
+        if(filex_tag == None):
+            
+            print('file_extention tag not found under {tag}. Exiting' \
+                  .format(tag = tag_string))
+
+        self.file_extension = filex_tag.text.strip()
+        
+        #Find the function's args
+        self.arg_list = self.list_args(tag, root)
+
+    def list_args(self, tag, root):
+
+        arg_list = []
+
+        args_tag = tag.find('args')
+
+        if(args_tag != None):
+            
+            arg_tag_list = args_tag.findall('arg')
+
+            if(not arg_tag_list):
+
+                print('no arg tags found. Exiting')
+
+                sys.exit()
+            
+            for arg_tag in arg_tag_list:
+                
+                arg_map = {}
+                
+                if(arg_tag.get('configurable') == 'True'):
+
+                    #Find the list of choices for this arg and create a dict out of it
+                    arg_set = root.find(arg_tag.text.strip())
+
+                    if(arg_set != None):
+
+                        pairs = arg_set.findall('pair')
+
+                        for pair in pairs:
+                         
+                            val_str = pair.find('value').text.strip()
+                            
+                            arg_map[pair.find('key').text.strip()] = val_str
+
+                else:
+            
+                    arg_map['default'] = arg_tag.text.strip()
+
+                arg_list.append(arg_map)
+
+        return arg_list
+
+    def print_data(self):
+        
+        print(
+        '''
+        name = {name}
+        declaration = {decl}
+        file_extension = {filex}
+        '''.format(
+                  name = self.name, \
+                  decl = self.declaration, \
+                  filex = self.file_extension \
+                  ))
+
+        for arg_map in self.arg_list:
+        
+            print('args: {arg_map}'.format(arg_map = arg_map))
+        
+        return
+
+#Captain!
+class trace_config_class:
+    
+    def __init__(self, root):
+        
+        #Create wrappers
+        self.wrap_above = wrap_class(root, 'wrap_above_func')
+
+        self.wrap_below = wrap_class(root, 'wrap_below_func')
+
+    def print_wrappers(self):
+
+        print('above wrapper:')
+
+        self.wrap_above.print_data()
+
+        print('below wrapper:')
+
+        self.wrap_below.print_data()
 
 class core_class:
     
@@ -514,8 +708,20 @@ def write_autogen_cpp(autogen_cpp, core_kernel_list, root):
 
     return
 
-#Captain
 def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str):
+
+    if(mode_str == 'trace'):
+        
+        print('trace mode')
+
+        config = trace_config_class(root)
+
+        config.print_wrappers()
+
+    else:
+
+        print('autotune mode')
+
 
     return
 
