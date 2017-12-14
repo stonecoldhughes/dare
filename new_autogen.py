@@ -193,6 +193,24 @@ void parse_stdin()
 }
 '''
 
+hooks_cpp_file_template = \
+'''{h_files}
+{externs}
+extern class Profile profile;
+
+using namespace std;
+{hooks}
+'''
+
+#a series of these concatenated replace the 'hooks' argument
+#in the hooks_cpp_file_template
+hook_template = \
+'''
+
+{definition}{{
+{invocation}
+}}
+'''
 
 #Classes
 class rgx_obj_class:
@@ -252,6 +270,48 @@ class wrap_class:
         
         #Find the function's args
         self.arg_list = self.list_args(tag, root)
+
+    #return a string of the below function call specialized for a particular kernel
+    def wrap_string(self, core_kernel_name, use_default):
+
+        if(use_default == 1):
+
+            call = 'profile.track_kernel((unsigned long){name}, omp_get_wtime());'\
+                   .format(name = core_kernel_name)
+
+        else:
+            
+            call = self.name + '('
+
+            arg_string = ''
+
+            if(self.arg_list):
+
+                for arg_map in self.arg_list[:-1]:
+                    
+                    if(core_kernel_name in arg_map):
+                    
+                        arg_string = arg_map[core_kernel_name]
+
+                    else:
+                        
+                        arg_string = arg_map['default']
+
+                    call += arg_string + ', '
+
+                arg_map = self.arg_list[-1]
+
+                if(core_kernel_name in arg_map):
+                
+                    arg_string = arg_map[core_kernel_name]
+
+                else:
+                    
+                    arg_string = arg_map['default']
+
+            call += arg_string + ');'
+
+        return call
 
     def list_args(self, tag, root):
 
@@ -315,7 +375,6 @@ class wrap_class:
         
         return
 
-#Captain!
 class trace_config_class:
     
     def __init__(self, root):
@@ -324,6 +383,74 @@ class trace_config_class:
         self.wrap_above = wrap_class(root, 'wrap_above_func')
 
         self.wrap_below = wrap_class(root, 'wrap_below_func')
+
+        self.h_files = self.gen_h_files()
+
+        self.extern_c = self.gen_extern_c()
+
+        self.use_default = get_use_default(root)
+
+    #wrap a single function invocation as a list in proper wrappers
+    #with proper return value
+    def wrapped_invocation_as_list(self, c):
+        
+        lines = []
+
+        if(c.rtype != 'void'):
+            
+            lines.append('{rtype} ret_val;\n\n'.format(rtype = c.rtype))
+
+        lines.append(self.wrap_above.wrap_string(c.name,\
+                                                 self.use_default) + '\n\n')
+
+        tmp = c.function_call_as_list
+        
+        tmp.append('\n')
+        
+        lines.extend(tmp)
+        
+        lines.append(self.wrap_below.wrap_string(c.name,\
+                                                 self.use_default) + '\n\n')
+
+        if(c.rtype != 'void'):
+
+            lines.append('return ret_val;')
+
+        else:
+            
+            lines.append('return;')
+
+        return lines
+
+    def gen_extern_c(self):
+        
+        externs = '\n'
+
+        if(self.wrap_above.file_extension == '.c'):
+            
+            externs +=  'extern "C" {decl}\n'.format(decl = self.wrap_above\
+                                                                .declaration)
+
+        if(self.wrap_below.file_extension == '.c'):
+
+            externs +=  'extern "C" {decl}\n'.format(decl = self.wrap_below\
+                                                                .declaration)
+
+        return externs
+
+    def gen_h_files(self):
+        
+        #Obtain the list of header files
+        trace_h = root.find('trace_h').findall('h')
+
+        h_files = '''#include "profile.h"'''
+
+        for h in trace_h:
+            
+            h_files += '\n#include "{h_file}"'.format(h_file = h.text.strip())
+
+        return h_files
+
 
     def print_wrappers(self):
 
@@ -367,7 +494,9 @@ class core_class:
 
         #express the function definition as a list
         function_def_as_list = self.listify_function(typed_arg_list,\
-                                                     definition_string)
+                                                     definition_string,\
+                                                     None,\
+                                                     False)
 
         #express the function definition as a string
         self.function_def = self.space_out(function_def_as_list, '')
@@ -423,7 +552,7 @@ class core_class:
     #concatenate lines and spaces into a string
     def space_out(self, lines, spaces):
         
-        full_string = ''
+        full_string = ''''''
 
         for line in lines:
 
@@ -433,7 +562,7 @@ class core_class:
 
         return full_string
 
-    def modify_arg_list(self, arg_list):
+    def insert_fake_data(self, arg_list):
 
         if(self.name == 'core_dpotrf'):
 
@@ -458,8 +587,12 @@ class core_class:
         return
 
     #create each line of the function as a list element properly spaced
-    #if it needs to use fake data, implement that
-    def listify_function(self, arg_list, call_string, data_dep_kernels = None):
+    #semicolon argument indicates whether the terminating paren should be
+    #followed by a semicolon
+    def listify_function(self, arg_list,\
+                         call_string,\
+                         data_dep_kernels = None,\
+                         semicolon = True):
         
         f = []
 
@@ -472,7 +605,7 @@ class core_class:
             if(self.name in data_dep_kernels):
                 
                 #modify the arg list according to which name it is
-                self.modify_arg_list(arg_list)
+                self.insert_fake_data(arg_list)
 
         #Does not include final arg
         for arg in arg_list[:-1]:
@@ -483,7 +616,15 @@ class core_class:
         f.append(spaces + arg_list[-1] + '\n')
 
         #closing paren
-        f.append(spaces + ');\n')
+        if(semicolon):
+            
+            close = ');\n'
+
+        else:
+            
+            close = ')\n'
+
+        f.append(spaces + close)
 
         return f
     
@@ -553,11 +694,11 @@ def write_lookup_tables(autogen_types_h, core_kernel_list):
     for c in core_kernel_list:
         
         enum_string += '{space}{name} = {i},\n'.format(space = four_space, \
-                                                       name = c.upper(), \
+                                                       name = c.name.upper(), \
                                                        i = i)
 
         kernel_string += '{space}\"{name}\",\n'.format(space = four_space, \
-                                                       name = c)
+                                                       name = c.name)
         
         i += 1
     
@@ -584,9 +725,9 @@ def write_typedefs(autogen_types_h, core_kernel_list):
     
     typedef_string = ''
 
-    for c in core_kernel_list.values():
+    for c in core_kernel_list:
 
-        typedef_string += c.typedef + '\n'
+        typedef_string += c.typedef + ';\n'
 
     autogen_types_h.write( \
 '''
@@ -630,21 +771,21 @@ def dump_file(string):
 
 def parse_hdr(hdr_file_string, mode_str, data_dep_kernels):
     
-    core_kernel_list = {}
+    core_kernel_map = {}
 
     matches = rgx_obj.core_regex.finditer(hdr_file_string)
 
     for m in matches:
 
-        if(m.group(2) not in core_kernel_list):
+        if(m.group(2) not in core_kernel_map):
             
-            core_kernel_list[m.group(2)] = core_class(m.group(1),\
+            core_kernel_map[m.group(2)] = core_class(m.group(1),\
                                                       m.group(2),\
                                                       m.group(3),\
                                                       data_dep_kernels,\
                                                       mode_str)
 
-    return core_kernel_list
+    return core_kernel_map
 
 #Creates a dictionary of function names and their associated fake_data subclass
 def find_data_dep_kernels(root):
@@ -666,7 +807,7 @@ def find_data_dep_kernels(root):
 
     return data_dep_kernels
 
-def get_use_default_tag(root):
+def get_use_default(root):
     
     #Determine whether or not to use default settings
     use_default_tag = root.find('use_default')
@@ -689,7 +830,7 @@ def get_use_default_tag(root):
 
 def write_autogen_cpp(autogen_cpp, core_kernel_list, root):
 
-    use_default = get_use_default_tag(root)
+    use_default = get_use_default(root)
     
     #Obtain the top-level directory for PLASMA
     plasma_dir = root.find('plasma_dir').text.strip()
@@ -699,7 +840,7 @@ def write_autogen_cpp(autogen_cpp, core_kernel_list, root):
 
     part_1_string = ''
 
-    for c in core_kernel_list.values():
+    for c in core_kernel_list:
 
         part_1_string += autogen_cpp_part_1.format(name = c.name,
                                                    name_uppercase = c.name.upper())
@@ -714,13 +855,37 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str):
         
         print('trace mode')
 
+        #extract trace configuration information
         config = trace_config_class(root)
-
+        
+        #Test code
         config.print_wrappers()
+
+        hook_string = ''
+
+        for c in core_kernel_list:
+            
+            #Obtain the function invocation lines as a list
+            wrapped_call_list = config.wrapped_invocation_as_list(c)
+
+            #Convert the invocation lines to a string
+            invocation = c.space_out(wrapped_call_list, '    ')
+
+            #Captain
+            hook_string += hook_template.format(definition = c.function_def,
+                                                invocation = invocation)
+
+        string = hooks_cpp_file_template.format(h_files = config.h_files,\
+                                           externs = config.extern_c,\
+                                           hooks = hook_string)
+
+        hooks_cpp.write(string)
 
     else:
 
-        print('autotune mode')
+        print('autotune mode not implemented. Exiting')
+
+        sys.exit()
 
 
     return
@@ -771,8 +936,10 @@ for f in p.iterdir():
 #Find the kernels with data dependencies and create a dictionary out of them
 data_dep_kernels = find_data_dep_kernels(root)
 
-#Create kernel list
-core_kernel_list = parse_hdr(hdr_file_string, mode_str, data_dep_kernels)
+#Create kernel map 
+core_kernel_map = parse_hdr(hdr_file_string, mode_str, data_dep_kernels)
+
+core_kernel_list = core_kernel_map.values()
 
 #Write autogen_types.h
 autogen_types_h = open('autogen_types.h', 'w')
@@ -795,7 +962,6 @@ write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str)
 
 hooks_cpp.close()
 
-#Test code
-for node in core_kernel_list.values():
+for node in core_kernel_list:
    
    node.print_lists()
