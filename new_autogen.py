@@ -309,12 +309,12 @@ class wrap_class:
         self.arg_list = self.list_args(tag, root)
 
     #return a string of the below function call specialized for a particular kernel
-    def wrap_string(self, core_kernel_name, use_default):
+    def wrap_string(self, core_kernel_enum, use_default):
 
         if(use_default == 1):
 
             call = 'profile.track_kernel((unsigned long){name}, omp_get_wtime());'\
-                   .format(name = core_kernel_name)
+                   .format(name = core_kernel_enum)
 
         else:
             
@@ -326,9 +326,9 @@ class wrap_class:
 
                 for arg_map in self.arg_list[:-1]:
                     
-                    if(core_kernel_name in arg_map):
+                    if(core_kernel_enum in arg_map):
                     
-                        arg_string = arg_map[core_kernel_name]
+                        arg_string = arg_map[core_kernel_enum]
 
                     else:
                         
@@ -338,9 +338,9 @@ class wrap_class:
 
                 arg_map = self.arg_list[-1]
 
-                if(core_kernel_name in arg_map):
+                if(core_kernel_enum in arg_map):
                 
-                    arg_string = arg_map[core_kernel_name]
+                    arg_string = arg_map[core_kernel_enum]
 
                 else:
                     
@@ -438,7 +438,7 @@ class trace_config_class:
             
             lines.append('{rtype} ret_val;\n\n'.format(rtype = c.rtype))
 
-        lines.append(self.wrap_above.wrap_string(c.name,\
+        lines.append(self.wrap_above.wrap_string(c.name.upper(),\
                                                  self.use_default) + '\n\n')
 
         tmp = c.function_call_as_list
@@ -447,7 +447,7 @@ class trace_config_class:
         
         lines.extend(tmp)
         
-        lines.append(self.wrap_below.wrap_string(c.name,\
+        lines.append(self.wrap_below.wrap_string(c.name.upper(),\
                                                  self.use_default) + '\n\n')
 
         if(c.rtype != 'void'):

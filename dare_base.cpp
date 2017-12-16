@@ -30,9 +30,11 @@ void dare_base::dump_data()
     for(int i = 0; i < num_threads; ++i)
     {
         vector<class kernel_node> *v = kernel_vec[i];
+
         for(int j = 0; j < v->size(); ++j)
         {
             class kernel_node &k = (*v)[j];
+
             fprintf(
                    file,
                    "%s %lf %lf %lf %llu\n",
@@ -45,12 +47,8 @@ void dare_base::dump_data()
         }
 
         v->clear();
-
-        printf("vector cleared\n");
     }
     
-    printf("finished dumping data\n");
-    fflush(stdout);
     return;
 }
 

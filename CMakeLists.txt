@@ -16,9 +16,7 @@ add_library(
            hooks.cpp
            autogen.cpp
            profile.cpp
-           autotune.cpp
            dare_base.cpp
-           fake_data_test/fake_data.cpp
            )
 
 
