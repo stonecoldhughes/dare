@@ -45,8 +45,12 @@ void dare_base::dump_data()
         }
 
         v->clear();
+
+        printf("vector cleared\n");
     }
     
+    printf("finished dumping data\n");
+    fflush(stdout);
     return;
 }
 

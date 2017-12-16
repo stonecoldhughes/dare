@@ -224,10 +224,6 @@ int main (int argc, char *argv[])
 
   a = (double *)malloc(len_bytes);
 
-  /* 
-  Captain! Change this to the identity matrix and see if timing results
-  are similar?
-  */
   gen_symmetric_2(a, n_total);
 
   //gen_identity(a, n_total);
@@ -263,7 +259,9 @@ int main (int argc, char *argv[])
   /* Final result */
   print_matrix(a, n);
 
+  printf("freeing \"a\"\n");
   free(a);
+  printf("freed \"a\"\n");
 
   return 0;
 }

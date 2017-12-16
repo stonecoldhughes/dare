@@ -51,6 +51,16 @@
 #define MAX_THREADS 256
 #define MAX_THREAD_EVENTS 1024
 
+/* Functions */
+#ifdef __cplusplus
+extern "C" 
+#endif
+void trace_cpu_start();
+#ifdef __cplusplus
+extern "C" 
+#endif
+void trace_cpu_stop(const char *color);
+
 // https://en.wikipedia.org/wiki/X11_color_names
 static struct {
     const char *color;
@@ -138,7 +148,3 @@ static struct {
                                           {"DarkSlateGray",   0x2F4F4F},
                                           {"Black",           0x000000}
 };
-
-/* Functions */
-void trace_cpu_start();
-void trace_cpu_stop(const char *color);

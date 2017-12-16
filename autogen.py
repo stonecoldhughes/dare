@@ -563,6 +563,7 @@ def trace_wrap_call(c, call, config):
         wrap = profile_wrap(c, four_space)
     
     #Customize the wrapper for each kernel
+    #Captain!
     else:
 
         wrap = gen_wrapper(c, config)
@@ -928,7 +929,6 @@ def plasma_init_hook(root, core_kernel_list):
 
     return plasma_init_str
 
-#Captain!
 def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
     if(mode_str == 'trace'):
@@ -1210,7 +1210,6 @@ def include_directories(root):
 
 def write_cmake_lists(cmake_lists, root):
     
-
     #Open files containing core_blas declarations
     plasma_dir = root.find('plasma_dir').text.strip()
 

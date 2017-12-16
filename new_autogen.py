@@ -212,6 +212,45 @@ hook_template = \
 }}
 '''
 
+cmake_lists_template = \
+'''set(CMAKE_CXX_COMPILER {cpp})
+set(CMAKE_C_COMPILER {c})
+        
+{include_dirs}
+
+project(optimize C CXX)
+
+{add_library}
+
+{target_link_libraries}
+'''
+
+cmake_target_link_libraries_template = \
+'''{line_0}
+{spaces}profile_lib
+{spaces}{plasma_dir}/lib/libcoreblas.so
+{spaces}{plasma_dir}/lib/libplasma.so
+{spaces}-fopenmp
+{spaces})
+'''
+cmake_include_dirs_template = \
+'''{line_0}
+{dir_list}
+{spaces})
+'''
+
+cmake_add_library_template = \
+'''{line_0}
+{spaces}profile_lib SHARED
+{spaces}hooks.cpp
+{spaces}autogen.cpp
+{spaces}profile.cpp
+{spaces}autotune.cpp
+{spaces}dare_base.cpp
+{spaces}fake_data_test/fake_data.cpp
+{trace_files}{spaces})
+'''
+
 #Classes
 class rgx_obj_class:
     
@@ -386,12 +425,13 @@ class trace_config_class:
 
         self.h_files = self.gen_h_files()
 
-        self.extern_c = self.gen_extern_c()
-
         self.use_default = get_use_default(root)
+        
+        self.extern_c = self.gen_extern_c()
 
     #wrap a single function invocation as a list in proper wrappers
     #with proper return value
+    #Captain
     def wrapped_invocation_as_list(self, c):
         
         lines = []
@@ -424,16 +464,20 @@ class trace_config_class:
 
     def gen_extern_c(self):
         
-        externs = '\n'
+        externs = ''
 
-        if(self.wrap_above.file_extension == '.c'):
+        if(self.use_default == 0):
+        
+            externs = '\n'
             
-            externs +=  'extern "C" {decl}\n'.format(decl = self.wrap_above\
-                                                                .declaration)
+            if(self.wrap_above.file_extension == '.c'):
+                
+                externs +=  'extern "C" {decl};\n'.format(decl = self.wrap_above\
+                                                                    .declaration)
 
-        if(self.wrap_below.file_extension == '.c'):
+            if(self.wrap_below.file_extension == '.c'):
 
-            externs +=  'extern "C" {decl}\n'.format(decl = self.wrap_below\
+                externs +=  'extern "C" {decl};\n'.format(decl = self.wrap_below\
                                                                 .declaration)
 
         return externs
@@ -727,7 +771,7 @@ def write_typedefs(autogen_types_h, core_kernel_list):
 
     for c in core_kernel_list:
 
-        typedef_string += c.typedef + ';\n'
+        typedef_string += c.typedef + '\n'
 
     autogen_types_h.write( \
 '''
@@ -858,9 +902,6 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str):
         #extract trace configuration information
         config = trace_config_class(root)
         
-        #Test code
-        config.print_wrappers()
-
         hook_string = ''
 
         for c in core_kernel_list:
@@ -871,7 +912,6 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str):
             #Convert the invocation lines to a string
             invocation = c.space_out(wrapped_call_list, '    ')
 
-            #Captain
             hook_string += hook_template.format(definition = c.function_def,
                                                 invocation = invocation)
 
@@ -888,6 +928,99 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str):
         sys.exit()
 
 
+    return
+
+def add_libraries(root):
+
+    string = ''
+
+    line_0 = 'add_library('
+
+    spaces = (len(line_0) - 1) * ' '
+
+    use_default = get_use_default(root)
+
+    trace_files = ''
+    
+    if(use_default == 0):
+        
+        trace_c_tag = root.find('trace_c')
+        
+        if(trace_c_tag):
+            
+            trace_c = trace_c_tag.findall('c')
+            
+            for f in trace_c:
+                
+                trace_files += spaces + f.text.strip() + '\n'
+                trace_files += '{spaces}{text}\n'.format(spaces = spaces,\
+                                                         text = f.text.strip())
+
+    string = cmake_add_library_template.format(line_0 = line_0,\
+                                               spaces = spaces,\
+                                               trace_files = trace_files)
+
+    return string
+
+def include_directories(root, plasma_dir):
+        
+    #Obtain the include directories for PLASMA
+    include_dirs = root.find('include_dirs').findall('dir')
+        
+    dir_list = ''
+
+    string = ''
+
+    line_0 = 'include_directories('
+
+    spaces = (len(line_0) - 1) * ' '
+
+    if(include_dirs != None):
+        
+        for d in include_dirs:
+            
+            dir_list += '{spaces}{text}\n'.format(spaces = spaces,\
+                                                  text = d.text.strip())
+
+        dir_list += '{spaces}{plasma_dir}/include'.format(spaces = spaces,\
+                                                          plasma_dir = plasma_dir)
+        
+        string = cmake_include_dirs_template.format(line_0 = line_0,\
+                                                    dir_list = dir_list,\
+                                                    spaces = spaces)
+        
+    return string
+
+def target_link_libraries(plasma_dir):
+    
+    line_0 = 'target_link_libraries('
+
+    spaces = (len(line_0) - 1) * ' '
+
+    string = cmake_target_link_libraries_template.format(line_0 = line_0,\
+                                                         plasma_dir = plasma_dir,\
+                                                         spaces = spaces)
+
+    return string
+
+def write_cmake_lists(cmake_lists, root):
+    
+    plasma_dir = root.find('plasma_dir').text.strip()
+
+    cpp_compiler = root.find('cpp_compiler').text.strip()
+
+    c_compiler = root.find('c_compiler').text.strip()
+
+    string = cmake_lists_template\
+             .format(include_dirs = include_directories(root, plasma_dir),\
+                     plasma_dir = plasma_dir,\
+                     add_library = add_libraries(root),\
+                     c = c_compiler,\
+                     cpp = cpp_compiler,
+                     target_link_libraries = target_link_libraries(plasma_dir))
+
+    cmake_lists.write(string)
+    
     return
 
 #Main code
@@ -962,6 +1095,13 @@ write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str)
 
 hooks_cpp.close()
 
-for node in core_kernel_list:
-   
-   node.print_lists()
+#Autogenerate the CMakeLists.txt file
+cmake_lists = open('CMakeLists.txt', 'w')
+
+write_cmake_lists(cmake_lists, root)
+
+cmake_lists.close()
+
+subprocess.run(['cmake', '.'])
+
+subprocess.run(['make'])
