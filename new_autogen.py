@@ -245,9 +245,7 @@ cmake_add_library_template = \
 {spaces}hooks.cpp
 {spaces}autogen.cpp
 {spaces}profile.cpp
-{spaces}autotune.cpp
 {spaces}dare_base.cpp
-{spaces}fake_data_test/fake_data.cpp
 {trace_files}{spaces})
 '''
 
@@ -423,9 +421,9 @@ class trace_config_class:
 
         self.wrap_below = wrap_class(root, 'wrap_below_func')
 
-        self.h_files = self.gen_h_files()
-
         self.use_default = get_use_default(root)
+
+        self.h_files = self.gen_h_files()
         
         self.extern_c = self.gen_extern_c()
 
@@ -484,17 +482,18 @@ class trace_config_class:
 
     def gen_h_files(self):
         
-        #Obtain the list of header files
-        trace_h = root.find('trace_h').findall('h')
-
         h_files = '''#include "profile.h"'''
+        
+        if(self.use_default == 0):
 
-        for h in trace_h:
-            
-            h_files += '\n#include "{h_file}"'.format(h_file = h.text.strip())
+            #Obtain the list of header files
+            trace_h = root.find('trace_h').findall('h')
+
+            for h in trace_h:
+                
+                h_files += '\n#include "{h_file}"'.format(h_file = h.text.strip())
 
         return h_files
-
 
     def print_wrappers(self):
 
