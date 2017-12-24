@@ -7,6 +7,9 @@ Autotune::Autotune()
     /* initialize iterations counters */
     iterations = new unsigned int*[num_threads];
 
+    /* seed the random number generator */
+    srand(time(NULL));
+
     for(int i = 0; i < num_threads; ++i)
     {
         iterations[i] = new unsigned int[TABLE_SIZE];

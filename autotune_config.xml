@@ -2,7 +2,7 @@
     <mode> autotune </mode>
     <use_stdin> 1 </use_stdin>
     <use_default> 1 </use_default>
-    <kernel_fraction> stdin </kernel_fraction>
+    <execution_ratio> stdin </execution_ratio>
     <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
     <tile_size> stdin </tile_size>    
     <include_dirs>
@@ -13,10 +13,10 @@
     <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>
     <cpp_compiler> /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0 </cpp_compiler>
 
-    <kernel_list>
-    <kernel> core_dpotrf </kernel>
-    </kernel_list>
-    <autotune_run_flag> 5 </autotune_run_flag>
+    <data_dep_functions>
+    <function> core_dpotrf </function>
+    </data_dep_functions>
+    <autotune_counter> 5 </autotune_counter>
     <clip_size> 5 </clip_size>
     <max_window_size> 2 </max_window_size>
 </config>

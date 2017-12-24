@@ -2,9 +2,9 @@ set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
 set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
         
 include_directories(
-                   /Users/hhughe11/research/dare
-                   /Users/hhughe11/research/dare/fake_data_test
                    /opt/intel/mkl/include
+                   /Users/hhughe11/research/dare/fake_data_test
+                   /Users/hhughe11/research/dare
                    /Users/hhughe11/plasma-17.1/include
                    )
 
@@ -17,6 +17,8 @@ add_library(
            autogen.cpp
            profile.cpp
            dare_base.cpp
+           fake_data_test/fake_data.cpp
+           autotune.cpp
            )
 
 

@@ -21,11 +21,11 @@ class Autotune : public dare_base
         you give 10:100 as the xml config's "kernel_fraction"
         where kernel_run:kernel_stride = 10:100
         */
-        int kernel_run;
+        int numerator;
 
-        int autotune_run_flag;
+        int autotune_counter;
 
-        int kernel_stride;
+        int denominator;
 
         int tile_size;
 

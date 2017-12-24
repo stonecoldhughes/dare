@@ -563,7 +563,6 @@ def trace_wrap_call(c, call, config):
         wrap = profile_wrap(c, four_space)
     
     #Customize the wrapper for each kernel
-    #Captain!
     else:
 
         wrap = gen_wrapper(c, config)
@@ -739,7 +738,7 @@ def last_half(root, core_kernel_list):
     if(tile_size != 'stdin'):
 
         plasma_init_str = 'autotune.tile_size = {ts};\n'\
-                           .format(ts = tile_size)
+                          .format(ts = tile_size)
 
     kf = root.find('kernel_fraction').text.strip()
 
@@ -943,6 +942,7 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
         print('autotune mode')
 
+        #Captain!
         f.write(plasma_init_hook(root, core_kernel_list))
 
     write_function_hooks(f, core_kernel_list, mode_str)
