@@ -942,7 +942,6 @@ def write_hooks_cpp(f, core_kernel_list, root, mode_str):
 
         print('autotune mode')
 
-        #Captain!
         f.write(plasma_init_hook(root, core_kernel_list))
 
     write_function_hooks(f, core_kernel_list, mode_str)
@@ -1033,12 +1032,13 @@ def fake_data_busy_wait(c):
 
         print('instructions to run \"{cname}\" with fake_data not found')
 
-        print('check \"fake_data_run\" in autogen.py. Exiting')
+        print('check \"fake_data_busy_wait\" in autogen.py. Exiting')
 
         sys.exit()
 
     return string
 
+#Captain!
 def fake_data_framework(c):
     
     string = '''\

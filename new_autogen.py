@@ -202,7 +202,56 @@ trace_hook_template = \
 }}
 '''
 
-#Captain
+#Captain! I think all data_dep functions are non-void
+case_template = \
+'''
+        {fake_data_type} *ptr = 
+        (class {fake_data_type}*)((*autotune.data[thread_num])[{cname}]);
+
+        if(ptr->tile_times_empty())
+        {{
+            {run}
+        }}
+
+        else if(ptr->clip_empty())
+        {{
+            {busy_wait}
+        }}
+
+        else
+        {{
+            if(++autotune.iterations[thread_num][{cname}] == 
+               autotune.autotune_counter)
+            {{
+                autotune.iterations[thread_num][{cname}] = -1;
+
+                {run}
+            }}
+
+            else
+            {{
+                {busy_wait}
+            }}
+        }}
+'''
+
+data_dep_template = \
+'''
+{definition}{{
+    int ret_val;
+
+    int random_n = rand() % autotune.denominator;
+
+    if(random_n < autotune.numerator)
+    {{
+        int thread_num = omp_get_thread_num();
+{cases}
+    }}
+
+    return PlasmaSuccess;
+}}
+'''
+
 autotune_void_hook_template = \
 '''
 {definition}{{
@@ -634,11 +683,12 @@ class autotune_config_class:
 
         for f in data_dep_functions:
             
-            print('data_dep_function: {f}'.format(f = f))
             if(f == 'core_dpotrf'):
                 
                 print('creating fake_data for core_dpotrf...')
                 
+                #Captain! You can replace the below with a string template,
+                #especially with data_dep_functions as a dictionary
                 string += \
         '''
         autotune.data[i]->emplace(
@@ -989,6 +1039,63 @@ class core_class:
 
 #Methods
 
+def fake_data_run(c):
+    
+    string = ''
+
+    if(c.name == 'core_dpotrf'):
+        
+        string = \
+        '''
+            profile.track_kernel({cname}, omp_get_wtime());
+            int ret_val = core_dpotrf(
+                    PlasmaLower,
+                    ptr->get_tile_size(),
+                    ptr->tile(),
+                    ptr->get_tile_size()
+                    );
+
+            profile.track_kernel({cname}, omp_get_wtime());
+            ptr->append_time(profile.last_kernel_time());
+        '''.format(cname = c.name.upper())
+
+    else:
+
+        print('instructions to run \"{cname}\" with fake_data not found')
+
+        print('check \"fake_data_run\" in autogen.py. Exiting')
+
+        sys.exit()
+
+    return string
+
+def fake_data_busy_wait(c):
+
+    string = ''
+    
+    if(c.name == 'core_dpotrf'):
+        
+        string = \
+        '''
+            double t = ptr->tile_time();
+            profile.track_kernel({cname}, omp_get_wtime());
+            ptr->busy_wait(t);
+            profile.track_kernel({cname}, omp_get_wtime());
+        '''.format(cname = c.name.upper())
+
+    else:
+
+        error = \
+        '''
+        instructions to run \"{cname}\" with fake_data not found.
+        check \"fake_data_busy_wait\" in autogen.py. Exiting
+        '''
+        print(error)
+
+        sys.exit()
+
+    return string
+
 def write_lookup_tables(autogen_types_h, core_kernel_list):
 
     enum_string = ''
@@ -1114,15 +1221,28 @@ def find_data_dep_functions(root):
 
     more_tags = tag.findall('function')
     
-    data_dep_functions= set()
+    data_dep_functions = {}
 
     #Obtain the list of items fake_data will be needed for
     for k in more_tags:
         
         k_text = k.text.strip()
 
-        data_dep_functions.add(k_text)
+        if(k_text == 'core_dpotrf'):
+            
+            data_dep_functions['core_dpotrf'] = 'fake_dpotrf_data'
 
+        else:
+            
+            error = \
+            '''
+            no instructions for data dependent function \"{name}\".
+            Exiting.'''.format(name = k_text)
+
+            print(error)
+
+            sys.exit()
+            
     return data_dep_functions
 
 def get_use_default(root):
@@ -1205,26 +1325,43 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str, data_dep_functi
 
         hook_string = ''
 
-        #Captain
         for c in core_kernel_list:
             
-            #Check to see if it is a data dependent function first
-            wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)
-
-            invocation = c.space_out(wrapped_call_list, '        ')
-
-            if(c.rtype != 'void'):
+            if(c.name in data_dep_functions):
                 
-                hook_string += autotune_not_void_hook_template\
-                               .format(definition = c.function_def,\
-                                       invocation = invocation)
+                print('{name} requires fake_data'.format(name = c.name))
 
-            else:
-                
-                hook_string += autotune_void_hook_template\
+                #Captain! Fill all this in!
+                cases = case_template\
+                        .format(fake_data_type = data_dep_functions[c.name],\
+                                cname = c.name.upper(),\
+                                run = fake_data_run(c),\
+                                busy_wait = fake_data_busy_wait(c))
+
+                hook_string += data_dep_template\
                                .format(definition = c.function_def,\
-                                       invocation = invocation)
+                                       cases = cases)
+
+                print(hook_string)
         
+            else:
+
+                wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)
+
+                invocation = c.space_out(wrapped_call_list, '        ')
+
+                if(c.rtype != 'void'):
+                    
+                    hook_string += autotune_not_void_hook_template\
+                                   .format(definition = c.function_def,\
+                                           invocation = invocation)
+
+                else:
+                    
+                    hook_string += autotune_void_hook_template\
+                                   .format(definition = c.function_def,\
+                                           invocation = invocation)
+
         string = hooks_cpp_autotune_template\
                  .format(parse_stdin = parse_stdin_string,\
                          parse_stdin_call = autotune_config.stdin_block,\
@@ -1264,7 +1401,7 @@ def add_libraries(root, mode_str):
 
     elif(mode_str == 'autotune'):
         
-        extra_files +=\
+        extra_files += \
         '''{spaces}fake_data_test/fake_data.cpp
 {spaces}autotune.cpp'''.format(spaces = spaces)
 
