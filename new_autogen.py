@@ -202,7 +202,6 @@ trace_hook_template = \
 }}
 '''
 
-#Captain! I think all data_dep functions are non-void
 case_template = \
 '''
         {fake_data_type} *ptr = 
@@ -211,6 +210,7 @@ case_template = \
         if(ptr->tile_times_empty())
         {{
             {run}
+            ptr->append_time(profile.last_kernel_time());
         }}
 
         else if(ptr->clip_empty())
@@ -226,6 +226,7 @@ case_template = \
                 autotune.iterations[thread_num][{cname}] = -1;
 
                 {run}
+                ptr->append_time(profile.last_kernel_time());
             }}
 
             else
@@ -301,6 +302,7 @@ cmake_target_link_libraries_template = \
 {spaces}{plasma_dir}/lib/libcoreblas.so
 {spaces}{plasma_dir}/lib/libplasma.so
 {spaces}-fopenmp
+{spaces}-g
 {spaces})
 '''
 cmake_include_dirs_template = \
@@ -687,8 +689,6 @@ class autotune_config_class:
                 
                 print('creating fake_data for core_dpotrf...')
                 
-                #Captain! You can replace the below with a string template,
-                #especially with data_dep_functions as a dictionary
                 string += \
         '''
         autotune.data[i]->emplace(
@@ -1039,6 +1039,7 @@ class core_class:
 
 #Methods
 
+#Captain! Fix this
 def fake_data_run(c):
     
     string = ''
@@ -1330,20 +1331,23 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str, data_dep_functi
             if(c.name in data_dep_functions):
                 
                 print('{name} requires fake_data'.format(name = c.name))
+                
+                #Create the invocation
+                wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)
+
+                invocation = c.space_out(wrapped_call_list, '        ')
 
                 #Captain! Fill all this in!
                 cases = case_template\
                         .format(fake_data_type = data_dep_functions[c.name],\
                                 cname = c.name.upper(),\
-                                run = fake_data_run(c),\
+                                run = invocation,\
                                 busy_wait = fake_data_busy_wait(c))
 
                 hook_string += data_dep_template\
                                .format(definition = c.function_def,\
                                        cases = cases)
 
-                print(hook_string)
-        
             else:
 
                 wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)

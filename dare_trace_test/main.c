@@ -149,30 +149,6 @@ void gen_symmetric_2(double *matrix, int n)
     return;
 }
 
-void gen_identity(double *matrix, int n)
-{
-    int i;
-    int j;
-
-    for(i = 0; i < n; ++i)
-    {
-        for(j = 0; j < n; ++j)
-        {
-            if(i == j)
-            {
-                matrix[ i * n + j ] = 0;
-            }
-
-            else
-            {
-                matrix[ i * n + j ] = 1.0;
-            }
-        }
-    }
-
-    return;
-}
-
 int dim_rand(int m_low, int m_add)
 {
     return m_low + ((rand() % m_add) + 1);
@@ -226,13 +202,12 @@ int main (int argc, char *argv[])
 
   gen_symmetric_2(a, n_total);
 
-  //gen_identity(a, n_total);
-
   plasma_init();
   
   plasma_set(PlasmaNb, nb);
 
   /* Main testing loop */
+  /* Captain! You could bring all the allocating into the body of the loop */
   for(i = 0; i < iterations; ++i)
   {
     if(n_add != 0) n = dim_rand(n_low, n_add);

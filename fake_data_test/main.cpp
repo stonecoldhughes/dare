@@ -14,7 +14,15 @@ void run(class fake_dpotrf_data &fake_dpotrf_data)
     {
         double t1 = omp_get_wtime();
 
+        /*
         int ret_val = core_dpotrf(
+                PlasmaLower,
+                fake_dpotrf_data.get_tile_size(),
+                m,
+                fake_dpotrf_data.get_tile_size()
+                );
+        */
+        int r = plasma_dpotrf(
                 PlasmaLower,
                 fake_dpotrf_data.get_tile_size(),
                 m,
@@ -25,7 +33,7 @@ void run(class fake_dpotrf_data &fake_dpotrf_data)
 
         double elapsed = t2 - t1;
 
-        printf("core_dpotrf %lf\n", elapsed);
+        printf("plasma_dpotrf %lf\n", elapsed);
 
         fake_dpotrf_data.append_time(elapsed);
     }
