@@ -66,21 +66,9 @@ int fake_data::tile_times_empty()
 
 double fake_data::tile_time()
 {
-    /* Captain! Replace the modulo with an if-statment */
-    /* Modulus operator is very slow */
-    printf(
-          "t_index: %d window_size: %d start: %d max_window_size: %d clip_index: %d\n",
-          t_index,
-          window_size,
-          start,
-          max_window_size,
-          clip_index
-          );
+    if(++t_index == window_size) t_index = 0;
 
-    this_thread::sleep_for (std::chrono::seconds(1));
-    int x = ((++t_index %= window_size) + start);
-    
-    return clip_times[x];
+    return clip_times[t_index + start];
 }
 
 void fake_data::busy_wait(double t)
@@ -95,9 +83,7 @@ void fake_data::busy_wait(double t)
 /* This function is meant to be called after tile() */
 void fake_data::append_time(double t)
 {
-    /* After tile is called, clip_index will be incremented */
     /* Subtract 1 to get the index of the round that was just expended */
-    printf("append_time called\n");
     int i = clip_index - 1;
 
     clip_times[i] = t;

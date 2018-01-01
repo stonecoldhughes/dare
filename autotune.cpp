@@ -10,16 +10,6 @@ Autotune::Autotune()
     /* seed the random number generator */
     srand(time(NULL));
 
-    for(int i = 0; i < num_threads; ++i)
-    {
-        iterations[i] = new unsigned int[TABLE_SIZE];
-
-        for(int j = 0; j < TABLE_SIZE; ++j)
-        {
-            iterations[i][j] = 0;
-        }
-    }
-
     data = new unordered_map<int, class fake_data*>*[num_threads];
     
     for(int i = 0; i < num_threads; ++i)

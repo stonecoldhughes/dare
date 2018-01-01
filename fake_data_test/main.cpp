@@ -4,7 +4,9 @@
 
 using namespace std;
 
-int n_args = 5;
+int n_args = 6;
+
+double global = 0;
 
 void run(class fake_dpotrf_data &fake_dpotrf_data)
 {
@@ -14,15 +16,7 @@ void run(class fake_dpotrf_data &fake_dpotrf_data)
     {
         double t1 = omp_get_wtime();
 
-        /*
         int ret_val = core_dpotrf(
-                PlasmaLower,
-                fake_dpotrf_data.get_tile_size(),
-                m,
-                fake_dpotrf_data.get_tile_size()
-                );
-        */
-        int r = plasma_dpotrf(
                 PlasmaLower,
                 fake_dpotrf_data.get_tile_size(),
                 m,
@@ -33,9 +27,11 @@ void run(class fake_dpotrf_data &fake_dpotrf_data)
 
         double elapsed = t2 - t1;
 
-        printf("plasma_dpotrf %lf\n", elapsed);
+        /* Captain! This is for testing */
+        printf("core_dpotrf %lf\n", global);
+        fake_dpotrf_data.append_time(global);
 
-        fake_dpotrf_data.append_time(elapsed);
+        global += 0.001;
     }
 
     return;
@@ -60,7 +56,7 @@ int main(int argc, char **argv)
     {
         printf(
               "wrong number of arguments!\n"
-              "expected tile_size, iterations, window_size, clip_size\n"
+              "expected tile_size, iterations, window_size, clip_size, counter\n"
               );
 
         exit(0);
@@ -74,6 +70,9 @@ int main(int argc, char **argv)
 
     int clip_size = atoi(argv[4]);
 
+    int counter = atoi(argv[5]);
+
+    int count = counter;
 
     double t1 = omp_get_wtime();
     class fake_dpotrf_data fake_dpotrf_data(
@@ -97,7 +96,7 @@ int main(int argc, char **argv)
 
     printf("window_size %d\n", fake_dpotrf_data.get_max_window_size());
 
-    printf("core_dpotrf <time>\n");
+    printf("counter %d\n", counter);
 
     /* Make this simulate a core_blas kernel being called over and over again */
     for(int i = 0; i < iterations; ++i)
@@ -120,18 +119,20 @@ int main(int argc, char **argv)
         else
         {
             /* Captain! Change to get_max_window_size */
-            if(!(i % (2 * fake_dpotrf_data.get_max_window_size() + 1)))
+            if(count == counter)
             {
                 /* get fake data matrix and run */
-                printf("random run ");
+                printf("random data run ");
                 run(fake_dpotrf_data);
+                count = 0;
             }
 
             else
             {
                 /* busy wait */
-                printf("random wait ");
+                printf("random busy wait ");
                 busy_wait(fake_dpotrf_data);
+                count++;
             }
         }
     }

@@ -1,3 +1,39 @@
+Explanation for my own sanity:
+    
+    clip_size:
+        
+        This is the number of matrix tiles in the clip
+
+    clip_index:
+        
+        The value of clip_index indicates the position of the next round
+        in the clip to be fired.
+
+    clip_times:
+        
+        Fills in the time of the matrix round that was just fired.
+        This index is 1 - clip_index.
+
+    window_size:
+        
+        This tells how big of a chunk in clip_times is to be iterated over
+        in a circular fashion. It counts up from 1 to max_window_size and then
+        stays at max_window_size. Until it grows to max size, the window does
+        not move forward. After that, it moves forward one round at a time.
+
+    t_index:
+        
+        indicates the position within the window
+
+    start:
+        
+        indicates the starting index of the window
+
+How to test:
+    
+    fill up clip_times with integers indicating position. Print them out.
+    Test how it works alongside the autotuner too.
+
 Tasks:
     Time mod and if statements. Go back to fake data test to verify that it works.
     autogenerate the fake data objects

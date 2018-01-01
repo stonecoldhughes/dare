@@ -670,6 +670,14 @@ class autotune_config_class:
     /* Populate each map with the kernels specified in the config file */
     for(int i = 0; i < autotune.num_threads; ++i)
     {{
+        autotune.iterations[i] = new unsigned int[TABLE_SIZE];
+
+        for(int j = 0; j < TABLE_SIZE; ++j)
+        {{
+            /* Another random run will be added before clip times is accessed */
+            autotune.iterations[i][j] = autotune.autotune_counter - 1;
+        }}
+
         {init_block}
     }}
     '''.format(clip_size = self.clip_size,\
