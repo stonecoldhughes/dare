@@ -1,3 +1,27 @@
+Note:
+    0. LINKING ORDER MATTERS
+Graph the following runs:
+    
+    0. Unlinked with the autotune library
+    1. Linked with the tracer library
+    2. Linked with autotune and full execution ratio
+    3. With half execution ratio
+    4. With quarter execution ratio
+
+    What should the application test? More than one iteration of a Cholesky
+    it needs to be able to generate a cholesky matrix of a random size
+
+Current plan:
+    
+    0. Figure out how your run.py works.
+    1. Start running some tests.
+    
+    what info do you need from this? overall runtime of each application.
+    You need each problem type and size with several execution ratios.
+    for each execution ratio you need to time each problem size.
+
+    write some more
+
 fake data integration plan:
     
     1. Have an uninitialized pointer to fake data memory.

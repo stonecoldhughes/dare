@@ -1,6 +1,5 @@
 set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
 set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
-set(CMAKE_BUILD_TYPE Debug)
 
 project(optimize C CXX)
 

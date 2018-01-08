@@ -4,10 +4,7 @@ import sys
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-
-#Global variable indicating how many strings are needed to run dgemm_dpotrf.
-#One for command line variables, one for stdin
-n_dgemm_dpotrf_arg_strings = 2
+import re
 
 #Also have an "analyze_data" function where you do the gradients and such
 #Plot the points. Assume each line has the same x values
@@ -45,7 +42,7 @@ def plot_point_data(xdata, ydata, line_labels):
             ymin = y
     
         #xdata[i] is a list of (m, n) tuples. You only want "m"
-        xlist = [t[0] for t in xdata[i]]
+        xlist = xdata[i]
 
         x = max(xlist)
 
@@ -60,15 +57,6 @@ def plot_point_data(xdata, ydata, line_labels):
             xmin = x
         
         
-        print('line {i}:\n xlist: {x}\n ylist: {y}\n' + \
-              'xmax: {xma} ymax: {yma}\n xmin: {xmi} ymin: {ymi}'.format(i = i, \
-                                             x = xlist, \
-                                             y = ylist, \
-                                             xma = xmax, \
-                                             yma = ymax, \
-                                             xmi = xmin, \
-                                             ymi = ymin))
-
         #Captain! Generate the label somehow. Make the first element a label
         #string and put that at the front of each set of line points?
         axis.plot(
@@ -87,9 +75,13 @@ def plot_point_data(xdata, ydata, line_labels):
                         )
 
     #Put a buffer on the min and max
-    axis.set_xlim(xmin - 10, xmax + 10)
+    xbuf = (xmax - xmin) / 5
 
-    axis.set_ylim(ymin - 10, ymax + 10)
+    ybuf = (ymax - ymin) / 5
+
+    axis.set_xlim(xmin - xbuf, xmax + xbuf)
+
+    axis.set_ylim(ymin - ybuf, ymax + ybuf)
 
     axis.set_title("Performance Characteristics")
 
@@ -115,8 +107,6 @@ def dump_point_data(xdata, ydata, line_labels):
 
     for i in range (0, total_lines):
         
-        print('line!')
-
         xlist = xdata[i]
 
         ylist = ydata[i]
@@ -127,12 +117,13 @@ def dump_point_data(xdata, ydata, line_labels):
 
         for j in range(0, n_points):
 
-            print('x = ({m},{n}) y = {y}'.format(m = xlist[j][0], \
-                                                 n = xlist[j][1], \
+            print('x = {x} y = {y}'.format(x = xlist[j], \
                                                  y = ylist[j]
                                                 ))
 
-#Start of main code
+label_regex = re.compile(r'Label:\s*(.*)')
+
+#Main code
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
@@ -143,7 +134,8 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-#Data sets to plot, 2 dimensional matrices. Possibly change to a list of tuples?
+#at index "i", xdata contains x points for a curve,
+#ydata contains y points, and line_labels contains the name of the curve
 xdata = []
 
 ydata = []
@@ -164,56 +156,83 @@ arg_file = open(args.file, 'r')
 #Read the contents of the file into a data structure.
 lines = arg_file.readlines()
 
-#The first line of the file says how many data points are in each line
-n_points = int(lines[0])
+i = 0
 
-#Number of lines of text in the config file that describe a line in the graph
-#2 lines are required to run the dgemm_dpotrf program
-line_chunk = n_points * n_dgemm_dpotrf_arg_strings + 1
+while(i < len(lines)):
 
-#Captain! Don't forget to get an overhead run
-print('i in range(1, {len_lines}, {line_chunk})'.format(len_lines = len(lines), line_chunk = line_chunk))
-for i in range (1, len(lines), line_chunk):
-    
-    print('at {i} in config file'.format(i = i))
+    line = lines[i].strip()
 
-    xdata.append([])
-
-    ydata.append([])
-
-    xlist = xdata[-1]
-
-    ylist = ydata[-1]
-
-    #The first line of every line_chunk is the label
-    line_labels.append(lines[i])
-
-    #Get the point data lines and run
-    for j in range (i+1, i+line_chunk, 2):
-
-        cmd_args = lines[j].split(' ')
-
-        stdin_args = lines[j+1].encode('utf-8')
+    if(line):
         
-        t1 = time.perf_counter()
+        if(line.startswith(r'Label:')):
+            
+            print(line)
 
-        p = subprocess.Popen(
-                            cmd_args, \
-                            stdin = subprocess.PIPE, \
-                            stdout = subprocess.PIPE, \
-                            )
+            match = label_regex.match(line)
 
-        #Captain! Should t1 be here to avoid overhead?
-        out = p.communicate(stdin_args)
+            if(match == None):
+                
+                print('No label text found. Exiting')
 
-        t2 = time.perf_counter()
+                sys.exit()
 
-        #tuple contains m, n
-        xlist.append((int(cmd_args[1]), int(cmd_args[3])))
+            line_labels.append(match.group(1))
+            
+            #Create and insert lists for curve data to occupy
+            xdata.append([])
 
-        ylist.append(t2 - t1)
+            ydata.append([])
 
-        print(out[0].decode('utf-8'))
+            xlist = xdata[-1]
+
+            ylist = ydata[-1]
+            
+
+            i = i + 1
+
+        elif(not line_labels):
+            
+            print('At least one line label must be present. Exiting')
+
+            sys.exit()
+
+        else:
+        
+            cmd_args = lines[ i ].split(' ')
+
+            stdin_args = lines[ i + 1 ].encode('utf-8')
+
+            p = subprocess.Popen(
+                                cmd_args, \
+                                stdin = subprocess.PIPE, \
+                                stdout = subprocess.PIPE, \
+                                )
+
+            #Captain! Should t1 be here to avoid overhead?
+            t1 = time.perf_counter()
+
+            out = p.communicate(stdin_args)
+
+            t2 = time.perf_counter()
+
+            #Tuple contains 
+            stdin_list = lines[ i + 1 ].split(' ')
+
+            index = stdin_list.index('tile_size')
+
+            tile_size = int(stdin_list[ index + 1 ])
+
+            xlist.append(tile_size)
+
+            ylist.append(t2 - t1)
+
+            print(out[0].decode('utf-8'))
+
+            i = i + 2
+
+    else:
+        
+        i = i + 1
 
 dump_point_data(xdata, ydata, line_labels)
 
