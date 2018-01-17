@@ -11,7 +11,7 @@
 
 #define ELEMENT_MAX 256
 #define BOTTOM_ROW_MAX 10
-#define PRINT 1
+#define PRINT 0
 
 void print_matrix(double *matrix, int n)
 {
@@ -87,12 +87,13 @@ int main (int argc, char *argv[])
   int iterations;
 
   /* Command line arguments should be m_low, m_high, n_low, n_high, iterations */ 
-  if(argc < 5) 
+  if(argc < 6) 
   {
     printf(
             "wrong number of arguments.\n"
-            "Expected n_low, n_add, iter, seed\n"
+            "Expected n_low, n_add, iter, seed, tile_size\n"
             "set seed to -1 to use time(NULL) for seed value\n"
+            "set tile_size to -1 to use default\n"
           );
     
     exit(0);
@@ -108,6 +109,10 @@ int main (int argc, char *argv[])
   else srand(time(NULL));
 
   plasma_init();
+
+  /* Set PlasmaNb */
+  nb = atoi(argv[5]);
+  if(nb != -1) plasma_set(PlasmaNb, nb);
   
   n_total = n_low + n_add;
 
@@ -140,6 +145,8 @@ int main (int argc, char *argv[])
     free(a);
 
     if(PRINT) printf("iteration %d return val: %d\n", i, r);
+    else if(r != 0) printf("iteration %d failed with return val: %d\n",
+                           i, r);
   }
 
 

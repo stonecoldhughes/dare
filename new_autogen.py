@@ -48,6 +48,9 @@ dare_base::dare_base()
     /* Set the default output flag */
     default_output = {default_output};
 
+    /* Set the output file name */
+    output_file_name = "{output_file_name}";
+
     /* Obtain a handle to the core_blas library */
     void *core_blas_file = dlopen(
                                  "{prefix}libcoreblas.so", 
@@ -302,7 +305,6 @@ cmake_target_link_libraries_template = \
 {spaces}{plasma_dir}/lib/libcoreblas.so
 {spaces}{plasma_dir}/lib/libplasma.so
 {spaces}-fopenmp
-{spaces}-g
 {spaces})
 '''
 cmake_include_dirs_template = \
@@ -347,11 +349,6 @@ extern "C" int plasma_init()
     plasma_set(PlasmaNb, autotune.tile_size);
 
     plasma_get(PlasmaNb, &tile_size);
-
-    printf(
-          "tile_size: %d numerator: %d denominator: %d\\n",
-          tile_size, autotune.numerator, autotune.denominator
-          );
 
     {fake_init}
 
@@ -1278,12 +1275,25 @@ def get_use_default(root):
 def write_autogen_cpp(autogen_cpp, core_kernel_list, root):
 
     use_default = get_use_default(root)
+
+    #Get the output file name
+    ofn_tag = root.find('output_file_name')
+
+    #If no output file name tag is found, use the default
+    if(ofn_tag == None):
+        
+        ofn = 'output.txt'
+
+    else:
+        
+        ofn = ofn_tag.text.strip()
     
     #Obtain the top-level directory for PLASMA
     plasma_dir = root.find('plasma_dir').text.strip()
 
-    part_0_string = autogen_cpp_part_0.format(prefix = plasma_dir + '/lib/', \
-                                              default_output = use_default)
+    part_0_string = autogen_cpp_part_0.format(prefix = plasma_dir + '/lib/',\
+                                              default_output = use_default,\
+                                              output_file_name = ofn)
 
     part_1_string = ''
 

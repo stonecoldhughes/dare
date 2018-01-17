@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import re
 
+iterations = 2
+
 #Also have an "analyze_data" function where you do the gradients and such
 #Plot the points. Assume each line has the same x values
 def plot_point_data(xdata, ydata, line_labels):
@@ -103,9 +105,9 @@ def dump_point_data(xdata, ydata, line_labels):
 
     total_lines = len(xdata)
 
-    print('total graph lines: {count}'.format(count = total_lines))
+    f = open('output.txt', 'w')
 
-    for i in range (0, total_lines):
+    for i in range(0, total_lines):
         
         xlist = xdata[i]
 
@@ -113,21 +115,57 @@ def dump_point_data(xdata, ydata, line_labels):
 
         n_points = len(xlist)
 
-        print('line label: {label}'.format(label = line_labels[i]))
+        f.write('line label: {label} - best tile size: {tile_size}\n'\
+               .format(label = line_labels[i],
+                       tile_size = xlist[ylist.index(min(ylist))]))
 
         for j in range(0, n_points):
 
-            print('x = {x} y = {y}'.format(x = xlist[j], \
-                                                 y = ylist[j]
-                                                ))
+            f.write('x = {x} y = {y}\n'.format(x = xlist[j], \
+                                             y = ylist[j]))
+
+    f.close()
 
 label_regex = re.compile(r'Label:\s*(.*)')
+
+def run_process_once(cmd_args, stdin_args):
+        
+    p = subprocess.Popen(
+                        cmd_args, \
+                        stdin = subprocess.PIPE, \
+                        stdout = subprocess.PIPE, \
+                        )
+
+    #Captain! Should t1 be here to avoid overhead?
+    t1 = time.perf_counter()
+
+    out = p.communicate(stdin_args)
+
+    t2 = time.perf_counter()
+
+    #print(out[0].decode('utf-8'))
+
+    return ( t2 - t1 )
+    
+
+def run_process(cmd_args, stdin_args, iterations):
+
+    total = 0.0
+
+    #run once to ignore warm up values
+    run_process_once(cmd_args, stdin_args)
+
+    for i in range(iterations):
+
+        total += run_process_once(cmd_args, stdin_args)
+
+    return total / iterations
 
 #Main code
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-                   '-f', '--file',\
+                   '-p', '--parameters',\
                    help = 'File containing executable parameters', \
                    required = True
                    )
@@ -144,14 +182,12 @@ line_labels = []
 
 print('This test requires a command line string and a stdin string\n')
 
-print('Command line string format: m_low m_add n_low n_add iter seed\n')
-
-print('Stdin string format: num_args tile_size <size> kernel_fraction' \
+print('Stdin string format: num_args tile_size <size> execution_ratio' \
       + ' <ratio>:<ratio>')
 
 #Enter the name of a file with command strings and stdin strings to run
 #The program with
-arg_file = open(args.file, 'r')
+arg_file = open(args.parameters, 'r')
 
 #Read the contents of the file into a data structure.
 lines = arg_file.readlines()
@@ -202,18 +238,9 @@ while(i < len(lines)):
 
             stdin_args = lines[ i + 1 ].encode('utf-8')
 
-            p = subprocess.Popen(
-                                cmd_args, \
-                                stdin = subprocess.PIPE, \
-                                stdout = subprocess.PIPE, \
-                                )
-
-            #Captain! Should t1 be here to avoid overhead?
-            t1 = time.perf_counter()
-
-            out = p.communicate(stdin_args)
-
-            t2 = time.perf_counter()
+            #Run this a configurable number of times to get a better
+            #average
+            t = run_process(cmd_args, stdin_args, iterations)
 
             #Tuple contains 
             stdin_list = lines[ i + 1 ].split(' ')
@@ -224,9 +251,7 @@ while(i < len(lines)):
 
             xlist.append(tile_size)
 
-            ylist.append(t2 - t1)
-
-            print(out[0].decode('utf-8'))
+            ylist.append(t)
 
             i = i + 2
 

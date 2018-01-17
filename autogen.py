@@ -764,11 +764,6 @@ def last_half(root, core_kernel_list):
 
     plasma_get(PlasmaNb, &tile_size);
 
-    printf(
-          "tile_size: %d kernel_run: %d kernel_stride: %d\\n",
-          tile_size, autotune.kernel_run, autotune.kernel_stride
-          );
-
     {fake_init}
 
     return ret_val;

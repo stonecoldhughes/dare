@@ -1,5 +1,53 @@
+run.py additions:
+    
+    0. overall order analysis measure
+    1. calculated min and max (top 3)
+    2. scripts to analyze kernel_data.txt
+       and output data.
+
+    3. Keep in mind, all runs incur library overhead.
+       You need to figure out what that overhead is. Have cmake create
+       another executable without linkage to the autotune library.
+       Add a "tile_size" command line argument and ignore it if it is -1.
+
+    Current test:
+
+        Could it be that your parameters for the autotune library are poorly
+        chosen? Could choosing different parameters help? Given the autotune
+        counter, numerator, and denominator, maybe not enough actual invocations
+        of the function are being called.
+
+        Does the fastest tile_size even stay the same from run to run?
+
+        Could you pick the top couple fastest runs and re-run to find the
+        fastest among those?
+        
+        Your runs are on the order of a few seconds. That's probably
+        the smallest allowable runtime. Now start decreasing number of
+        iterations. See if that cuts the time a little. The number of
+        tile sizes you're iterating over is very very small. Speed it
+        up so you can see a wider range of tile sizes. The difference
+        between the best and worst case times is very very small.
+        
+        Run for tile size of 96. Trace and autotune. What is the smallest
+        percent difference it can catch?
+    
+    run.py analysis:
+        
+        1. Average percentage difference between runtimes
+        2. Ordering correctness
+    
+    kernel_data.txt analysis:
+        
+        1. Average kernel runtime. Other statistical measurements, such as
+           how many of each function type is called. Use this information
+           to pick better numerator/denominator values for the autotune library.
+
+
 Note:
+
     0. LINKING ORDER MATTERS
+
 Graph the following runs:
     
     0. Unlinked with the autotune library

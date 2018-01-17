@@ -27,6 +27,5 @@ target_link_libraries(
                      /Users/hhughe11/plasma-17.1/lib/libcoreblas.so
                      /Users/hhughe11/plasma-17.1/lib/libplasma.so
                      -fopenmp
-                     -g
                      )
 

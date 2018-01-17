@@ -1,0 +1,30 @@
+development direction:
+    
+    Determine the sampling of the library to determine how well the sample
+    represents all calls. What is the best way to do this? Probably and invocation
+    number?
+
+    Write a script that compiles, runs, and compares the output. It needs to
+    take the same runtime parameters the executables do. Design it well. You need
+    to compare against a control too. Compare against 2 tracing runs to get the
+    difference between those 2.
+
+    compare trace to autotune and trace to control. Then compare control
+    differences and regular differences.
+    
+Questions:
+
+    The library could be providing the wrong time values.
+    The time values could be from too small of a sample.
+    You could try copying the fake data into the matrix itself
+    so that it is in the right format and the stride access is
+    built in. Could the lack of stride in the fake data be messing things
+    up?
+
+    Every kernel in autotune is about 100 times slower than in trace.
+    Why is that? Because you were running with the wrong data...
+
+Answers:
+    
+    The fact that stride is not incorporated is a serious issue. However, that does
+    not explain the discrepancy with kernels such as core_dgemm, for example.

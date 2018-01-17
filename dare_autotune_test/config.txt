@@ -1,0 +1,44 @@
+Label: overhead
+./dpotrf_test_overhead.bin 1000 0 20 -1 92
+2 execution_ratio overhead tile_size 92
+./dpotrf_test_overhead.bin 1000 0 20 -1 95
+2 execution_ratio overhead tile_size 95
+./dpotrf_test_overhead.bin 1000 0 20 -1 96
+2 execution_ratio overhead tile_size 96
+./dpotrf_test_overhead.bin 1000 0 20 -1 97
+2 execution_ratio overhead tile_size 97
+./dpotrf_test_overhead.bin 1000 0 20 -1 98
+2 execution_ratio overhead tile_size 98
+Label: full
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 2:2 tile_size 92
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 2:2 tile_size 95
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 2:2 tile_size 96
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 2:2 tile_size 97
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 2:2 tile_size 98
+Label: half
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 1:2 tile_size 92
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 1:2 tile_size 95
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 1:2 tile_size 96
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 1:2 tile_size 97
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 1:2 tile_size 98
+Label: zero
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 0:2 tile_size 92
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 0:2 tile_size 95
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 0:2 tile_size 96
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 0:2 tile_size 97
+./dpotrf_test.bin 1000 0 20 -1 -1
+2 execution_ratio 0:2 tile_size 98

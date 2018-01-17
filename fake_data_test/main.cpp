@@ -8,6 +8,28 @@ int n_args = 6;
 
 double global = 0;
 
+void print_matrix(double *matrix, int n)
+{
+    int i;
+    int j;
+
+    printf("matrix:\n");
+
+    for(i = 0; i < n; ++i)
+    {
+        for(j = 0; j < n; ++j)
+        {
+            printf(" %4lf", matrix[ i * n + j ]);
+        }
+
+        printf("\n");
+    }
+
+    printf("\n");
+    
+    return;
+}
+
 void run(class fake_dpotrf_data &fake_dpotrf_data)
 {
     double *m = fake_dpotrf_data.tile();

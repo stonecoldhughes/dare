@@ -46,4 +46,6 @@
     <c> /Users/hhughe11/research/dare/trace.c </c>
     </trace_c>
     
+    <output_file_name> trace_data.txt </output_file_name>
+    
 </config>

@@ -14,12 +14,12 @@ void dare_base::dump_data()
     /* Change the output file name to be a configurable option */
     if(append)
     {
-        file = fopen("kernel_data.txt", "a");
+        file = fopen(output_file_name.c_str(), "a");
     }
     
     else
     {
-        file = fopen("kernel_data.txt", "w");
+        file = fopen(output_file_name.c_str(), "w");
 
         append = false;
     }

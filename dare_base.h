@@ -59,4 +59,6 @@ class dare_base
         
         /* Whether or not the tracer is set to the default case */
         int default_output;
+
+        string output_file_name;
 };
