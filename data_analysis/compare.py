@@ -17,11 +17,11 @@ Control Data:
 
 {control_stats}
 
-Control Comparison:
+Trace vs. Control:
 
 {control_compare}
 
-Autotune Comparison:
+Trace vs. Autotune:
 
 {autotune_compare}
 '''

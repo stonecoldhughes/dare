@@ -47,17 +47,46 @@ def make_test_executable(config_xml):
 
     return
 
-def run_executable(cmd, src, destination):
+def run_executable(cmd, src, destination, iterations):
     
-    p = subprocess.Popen(cmd, cwd = test_dir)
+    for i in range(iterations):
 
-    p.communicate()
+        p = subprocess.Popen(cmd, cwd = test_dir)
+
+        p.communicate()
 
     #Save output to this directory
     os.rename(test_dir + '/' + src,\
               this_dir + '/' + destination)
 
     return
+
+def run_autotune_executable(args, stdin_args, iterations):
+
+    for i in range(iterations):
+
+        p = subprocess.Popen(
+                            args.params,\
+                            cwd = test_dir,\
+                            stdin = subprocess.PIPE,\
+                            stdout = subprocess.PIPE)
+
+        out = p.communicate(stdin_args)
+
+    os.rename(test_dir + '/' + autotune_test_output,\
+              this_dir + '/' + autotune_test_output)
+
+    #Output files are now ready for analysis
+    p = subprocess.Popen([args.python,\
+                          compare_script,\
+                          '-t',\
+                          trace_test_output,\
+                          '-c',\
+                          control_test_output,\
+                          '-a',\
+                          autotune_test_output])
+
+    out = p.communicate()
 
 #Get command line arguments
 parser = argparse.ArgumentParser()
@@ -79,10 +108,10 @@ make_test_executable(trace_config_xml)
 args.params.insert(0, test_ex)
 
 #Run a control test
-run_executable(args.params, trace_test_output, control_test_output)
+run_executable(args.params, trace_test_output, control_test_output, 2)
 
 #Run the trace test 
-run_executable(args.params, trace_test_output, trace_test_output)
+run_executable(args.params, trace_test_output, trace_test_output, 2)
 
 #Build the autotune library
 make_test_executable(autotune_config_xml)
@@ -96,25 +125,4 @@ stdin_args = '2 execution_ratio 2:2 tile_size {tile_size}'\
 
 #Run the autotune pass
 
-p = subprocess.Popen(
-                    args.params,\
-                    cwd = test_dir,\
-                    stdin = subprocess.PIPE,\
-                    stdout = subprocess.PIPE)
-
-out = p.communicate(stdin_args)
-
-os.rename(test_dir + '/' + autotune_test_output,\
-          this_dir + '/' + autotune_test_output)
-
-#Output files are now ready for analysis
-p = subprocess.Popen([args.python,\
-                      compare_script,\
-                      '-t',\
-                      trace_test_output,\
-                      '-c',\
-                      control_test_output,\
-                      '-a',\
-                      autotune_test_output])
-
-out = p.communicate()
+run_autotune_executable(args, stdin_args, 2)
