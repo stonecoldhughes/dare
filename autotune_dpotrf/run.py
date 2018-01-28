@@ -1,3 +1,12 @@
+'''
+This script runs an executable iteratively based on a config file and obtains
+a data point for a single run. Data points are associated with a line label.
+Each run consumes a command line string and a stdin string. The format of the
+command line string varies based on the executable, but the stdin string is
+based off of the requirements of the DARE autotuning library and has the format:
+<num_args> tile_size <size> execution_ratio <ratio>:<ratio>
+'''
+
 import argparse
 import subprocess
 import sys
@@ -179,11 +188,6 @@ xdata = []
 ydata = []
 
 line_labels = []
-
-print('This test requires a command line string and a stdin string\n')
-
-print('Stdin string format: num_args tile_size <size> execution_ratio' \
-      + ' <ratio>:<ratio>')
 
 #Enter the name of a file with command strings and stdin strings to run
 #The program with

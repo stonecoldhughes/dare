@@ -1,8 +1,7 @@
 import argparse
 
 #Configurable variables
-#tile_sizes = [i for i in range(90, 100)]
-tile_sizes = [92, 95, 96, 97, 98]
+tile_sizes = [32, 48, 64, 78, 92, 96, 110, 128, 147, 192, 225, 256]
 
 n = 1000
 
@@ -10,15 +9,15 @@ n_add = 0
 
 iterations = 20
 
-seed = -1
+seed = 5
 
 overhead_executable = './dpotrf_test_overhead.bin'
 
 executable = './dpotrf_test.bin'
 
-execution_ratios = ['2:2', '1:2', '0:2']
+execution_ratios = ['2:2', '1:2']
 
-line_labels = ['full', 'half', 'zero']
+line_labels = ['full', 'half']
 
 #String templates
 stdin_template = \
@@ -43,7 +42,7 @@ args = parser.parse_args()
 config_file = open(args.file, 'w')
 
 #Conduct a pure overhead run
-config_file.write(label_template.format(label = 'overhead'))
+config_file.write(label_template.format(label = 'raw'))
 
 for tile_size in tile_sizes:
         

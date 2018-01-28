@@ -1,3 +1,61 @@
+Project restructuring:
+    
+    0. Single autotune directory.
+    1. gen_config.py makes several different types of executables.
+    2. Expand your test program runs dpotrf test too.
+
+Approach:
+    
+    Modify the saturn test to do a dgemm performance sweep.
+    Use these points to find the search space for your script.
+    Use those points instead of the ones you have been using.
+    See if that improves performance. Try a QR factorization
+    instead of Cholesky, because you don't need fake data for QR.
+
+    Start here: investigate which kernels are called for QR, LU, and SVD.
+    Plasma calls to look at: dgels, dgeqrf, dtrsm, u
+
+    dgeqrf - qr factorization
+    dgetrf - lu factorization
+    dtrsm - matrix solve
+    dgels - least squares
+
+    if they don't call data dependent kernels... you should totally
+    run them instead of Cholesky.
+
+    do a dgemm performance sweep. Find the peak values and use as input
+    to the autotuner.
+
+    Move the whole system to saturn. See how it works there. Do this with
+    Cholesky first and also QR and the other kernels if your initial step work
+    out well.
+
+Solutions:
+    
+    0. Narrow your point selection by picking local maxima from dgemm performance 
+       sweep
+    1. Represent results as GFLOPs instead of execution time
+    2. Run on Saturn with more cores
+    3. Read Clint Whaley's paper. Done, waste of time...
+    4. Slowdown likely caused by cache effects. Could your data be placed 
+       directly in cache?
+       Read the Cholesky algorithm to find out.
+    5. Show graphs of performnce vs matrix size. Each curve is a different nb.
+       Show crossover points. See if the crossover points match as determined by
+       your library.
+
+
+    flops / second = n^3 / 10^9 / seconds.
+
+    flops = n^3 * iterations.
+    
+Problems:
+    
+    0. Prediction is not perfectly accurate. Is it good enough?
+    1. Is the core_dpotrf discrepancy to blame for this?
+    2. How can I reduce the percentage discrepancy for core_dpotrf?
+    3. Something about the fake data is a problem
+
 run.py additions:
     
     0. overall order analysis measure
