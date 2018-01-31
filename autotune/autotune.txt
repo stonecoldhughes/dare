@@ -1,8 +1,40 @@
+Function tree:
+    
+    core_dtsqrt --> core_dtsmqr --> core_dparfb --> core_dpamm
+
+    There's 2 options here: run only the bottom nodes or run only the top
+    nodes. I think running the top nodes is a better idea. Add a feature
+    to always run certain kernels.
+
+Note: Make sure to change the weak_attribute script to add the weak symbols
+to the C files instead of the h files, to align with Mark Gates's changes.
+modified:
+    
+    dtsqrt
+    dgeqrt
+
+How to fix slow core_dpotrfs:
+    
+    Compare the times for fake data by itself loaded in cache to times
+    for actual dpotrf in the context of a larger matrix. Get a list of
+    times and use those instead of the ones directly from the application run.
+    
 Project restructuring:
     
     0. Single autotune directory.
     1. gen_config.py makes several different types of executables.
     2. Expand your test program runs dpotrf test too.
+    3. Write dgemm test.
+    4. Find dgemm peaks, use for tile sizes for run.py/gen_config.py
+    5. configure to run on saturn, run run.py with different function
+    6. Represent GFLOPs instead of time
+    7. Find the crossover points curve
+    
+    0. Run "run.py" with dgeqrf and dpotrf. See how it behaves.
+    1. Run "analyze.py" with dgeqrf and see how it behaves.
+    2. Get it to run on Saturn
+    3. Find dgemm peaks
+    4. Fix dpotrf, examine dgeqrf. 
 
 Approach:
     

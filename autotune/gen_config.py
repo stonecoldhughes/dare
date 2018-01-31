@@ -3,17 +3,23 @@ import argparse
 #Configurable variables
 tile_sizes = [32, 48, 64, 78, 92, 96, 110, 128, 147, 192, 225, 256]
 
+function = 'dgeqrf'
+
+m = 1000
+
+m_add = 0
+
 n = 1000
 
 n_add = 0
 
-iterations = 20
+iterations = 5
 
-seed = 5
+seed = 420
 
-overhead_executable = './dpotrf_test_overhead.bin'
+raw_executable = './autotune_raw.bin'
 
-executable = './dpotrf_test.bin'
+executable = './autotune.bin'
 
 execution_ratios = ['2:2', '1:2']
 
@@ -24,7 +30,7 @@ stdin_template = \
 '2 execution_ratio {execution_ratio} tile_size {tile_size}\n'
 
 command_template = \
-'{executable} {n} {n_add} {iterations} {seed} {nb}\n'
+'{executable} {function} {m} {m_add} {n} {n_add} {iterations} {seed} {tile_size}\n'
 
 label_template = \
 'Label: {label}\n'
@@ -41,17 +47,20 @@ args = parser.parse_args()
 
 config_file = open(args.file, 'w')
 
-#Conduct a pure overhead run
+#Conduct a raw run
 config_file.write(label_template.format(label = 'raw'))
 
 for tile_size in tile_sizes:
         
-    string = command_template.format(executable = overhead_executable,\
+    string = command_template.format(executable = raw_executable,\
                                     n = n,\
                                     n_add = n_add,\
+                                    m = m,\
+                                    m_add = m_add,\
                                     iterations = iterations,\
                                     seed = seed,\
-                                    nb = tile_size)
+                                    tile_size = tile_size,\
+                                    function = function)
 
     string += stdin_template.format(execution_ratio = 'overhead',\
                                     tile_size = tile_size)
@@ -66,11 +75,14 @@ for pair in zip(line_labels, execution_ratios):
     for tile_size in tile_sizes:
         
         string = command_template.format(executable = executable,\
+                                        m = m,\
+                                        m_add = m_add,\
                                         n = n,\
                                         n_add = n_add,\
                                         iterations = iterations,\
                                         seed = seed,\
-                                        nb = -1)
+                                        tile_size = -1,\
+                                        function = function)
 
         string += stdin_template.format(execution_ratio = pair[1],\
                                         tile_size = tile_size)

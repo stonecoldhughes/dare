@@ -10,9 +10,9 @@ python_ex = '/Users/hhughe11/python/bin/python'
 
 dare_dir = '/Users/hhughe11/research/dare'
 
-test_dir = '/Users/hhughe11/research/dare/dare_autotune_test'
+test_dir = '/Users/hhughe11/research/dare/autotune'
 
-test_ex = './dpotrf_test.bin'
+test_ex = './autotune.bin'
 
 autogen_script = 'new_autogen.py'
 
@@ -47,7 +47,7 @@ def make_test_executable(config_xml):
 
     return
 
-def run_executable(cmd, src, destination, iterations):
+def run_trace_executable(cmd, src, destination, iterations):
     
     for i in range(iterations):
 
@@ -76,6 +76,10 @@ def run_autotune_executable(args, stdin_args, iterations):
     os.rename(test_dir + '/' + autotune_test_output,\
               this_dir + '/' + autotune_test_output)
 
+    return
+
+def analyze_data(args):
+
     #Output files are now ready for analysis
     p = subprocess.Popen([args.python,\
                           compare_script,\
@@ -88,6 +92,8 @@ def run_autotune_executable(args, stdin_args, iterations):
 
     out = p.communicate()
 
+    return
+
 #Get command line arguments
 parser = argparse.ArgumentParser()
 
@@ -95,8 +101,9 @@ parser.add_argument('-p', '--python',\
                     help = 'location of a python executable',\
                     default = python_ex)
 
-parser.add_argument('--params', nargs = 5,\
-                    help = 'n_low, n_add, iter, seed, tile_size',\
+parser.add_argument('--params', nargs = 8,\
+                    help = 'function, m, m_add, n, n_add, iterations, seed, '\
+                           + 'tile_size',\
                     required = True)
 
 args = parser.parse_args()
@@ -108,10 +115,10 @@ make_test_executable(trace_config_xml)
 args.params.insert(0, test_ex)
 
 #Run a control test
-run_executable(args.params, trace_test_output, control_test_output, 2)
+run_trace_executable(args.params, trace_test_output, control_test_output, 2)
 
 #Run the trace test 
-run_executable(args.params, trace_test_output, trace_test_output, 2)
+run_trace_executable(args.params, trace_test_output, trace_test_output, 2)
 
 #Build the autotune library
 make_test_executable(autotune_config_xml)
@@ -126,3 +133,5 @@ stdin_args = '2 execution_ratio 2:2 tile_size {tile_size}'\
 #Run the autotune pass
 
 run_autotune_executable(args, stdin_args, 2)
+
+analyze_data(args)
