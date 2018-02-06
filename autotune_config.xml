@@ -16,6 +16,12 @@
     <data_dep_functions>
     <function> core_dpotrf </function>
     </data_dep_functions>
+    
+    <always_run_functions>
+    <function> core_dparfb </function>
+    <function> core_dpamm </function>
+    </always_run_functions>
+    
     <autotune_counter> 20 </autotune_counter>
     <clip_size> 50 </clip_size>
     <max_window_size> 10 </max_window_size>

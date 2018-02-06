@@ -103,8 +103,12 @@ parser.add_argument('-p', '--python',\
 
 parser.add_argument('--params', nargs = 8,\
                     help = 'function, m, m_add, n, n_add, iterations, seed, '\
-                           + 'tile_size',\
+                           + ' tile_size',\
                     required = True)
+
+parser.add_argument('-e', '--execution_ratio',\
+                    help = 'specify an execution_ratio for the autotuner',\
+                    default = '2:2')
 
 args = parser.parse_args()
 
@@ -127,8 +131,9 @@ tile_size = args.params[-1]
 
 args.params[-1] = '-1'
 
-stdin_args = '2 execution_ratio 2:2 tile_size {tile_size}'\
-             .format(tile_size = tile_size).encode('utf-8')
+stdin_args = '2 execution_ratio {execution_ratio} tile_size {tile_size}'\
+             .format(tile_size = tile_size,\
+                     execution_ratio = args.execution_ratio).encode('utf-8')
 
 #Run the autotune pass
 

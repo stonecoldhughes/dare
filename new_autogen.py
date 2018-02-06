@@ -239,7 +239,7 @@ case_template = \
         }}
 '''
 
-data_dep_template = \
+autotune_data_dep_template = \
 '''
 {definition}{{
     int ret_val;
@@ -273,7 +273,7 @@ autotune_void_hook_template = \
 autotune_not_void_hook_template = \
 '''
 {definition}{{
-    int ret_val;
+    int ret_val = PlasmaSuccess;
     
     int random_n = rand() % autotune.denominator + 1;
 
@@ -283,6 +283,27 @@ autotune_not_void_hook_template = \
     }}
 
     return ret_val;
+}}
+'''
+
+autotune_always_run_not_void_template = \
+'''
+{definition}{{
+    int ret_val = PlasmaSuccess;
+    
+{invocation}
+
+    return ret_val;
+}}
+'''
+
+autotune_always_run_void_template = \
+'''
+{definition}{{
+
+{invocation}
+
+    return;
 }}
 '''
 
@@ -1044,7 +1065,6 @@ class core_class:
 
 #Methods
 
-#Captain! Fix this
 def fake_data_run(c):
     
     string = ''
@@ -1216,6 +1236,25 @@ def parse_hdr(hdr_file_string, mode_str, data_dep_functions):
 
     return core_functions_map
 
+#Creates a set of function names that always run
+def find_always_run_functions(root):
+    
+    always_run_functions = set()
+
+    tag = root.find('always_run_functions')
+
+    if(tag != None):
+        
+        more_tags = tag.findall('function')
+
+        for k in more_tags:
+            
+            k_text = k.text.strip()
+
+            always_run_functions.add(k_text)
+
+    return always_run_functions
+
 #Creates a dictionary of function names and their associated fake_data subclass
 def find_data_dep_functions(root):
     
@@ -1306,7 +1345,12 @@ def write_autogen_cpp(autogen_cpp, core_kernel_list, root):
 
     return
 
-def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str, data_dep_functions):
+def write_hooks_cpp(hooks_cpp,\
+                    core_kernel_list,\
+                    root,\
+                    mode_str,\
+                    data_dep_functions,\
+                    always_run_functions):
 
     if(mode_str == 'trace'):
         
@@ -1346,29 +1390,40 @@ def write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str, data_dep_functi
 
         for c in core_kernel_list:
             
-            if(c.name in data_dep_functions):
-                
-                print('{name} requires fake_data'.format(name = c.name))
-                
-                #Create the invocation
-                wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)
+            #Create the invocation
+            wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)
 
+            #Captain! Add a new case for if the kernel is in the no-run zone
+            if(c.name in always_run_functions):
+
+                invocation = c.space_out(wrapped_call_list, '    ')
+
+                if(c.rtype != 'void'):
+                    
+                    hook_string += autotune_always_run_not_void_template\
+                                   .format(definition = c.function_def,\
+                                           invocation = invocation)
+                else:
+
+                    hook_string += autotune_always_run_void_template\
+                                   .format(definition = c.function_def,\
+                                           invocation = invocation)
+            
+            elif(c.name in data_dep_functions):
+                
                 invocation = c.space_out(wrapped_call_list, '        ')
 
-                #Captain! Fill all this in!
                 cases = case_template\
                         .format(fake_data_type = data_dep_functions[c.name],\
                                 cname = c.name.upper(),\
                                 run = invocation,\
                                 busy_wait = fake_data_busy_wait(c))
 
-                hook_string += data_dep_template\
+                hook_string += autotune_data_dep_template\
                                .format(definition = c.function_def,\
                                        cases = cases)
 
             else:
-
-                wrapped_call_list = autotune_config.wrapped_invocation_as_list(c)
 
                 invocation = c.space_out(wrapped_call_list, '        ')
 
@@ -1540,6 +1595,9 @@ for f in p.iterdir():
 #Find the kernels with data dependencies and create a dictionary out of them
 data_dep_functions = find_data_dep_functions(root)
 
+#Find the kernels that the autotuner is not supposed to interfere with
+always_run_functions = find_always_run_functions(root)
+
 #Create kernel map 
 core_kernel_map = parse_hdr(hdr_file_string, mode_str, data_dep_functions)
 
@@ -1562,7 +1620,12 @@ autogen_cpp.close()
 #Autogenerate the hooks.cpp file
 hooks_cpp = open('hooks.cpp', 'w')
 
-write_hooks_cpp(hooks_cpp, core_kernel_list, root, mode_str, data_dep_functions)
+write_hooks_cpp(hooks_cpp,\
+                core_kernel_list,\
+                root,\
+                mode_str,\
+                data_dep_functions,\
+                always_run_functions)
 
 hooks_cpp.close()
 

@@ -1,7 +1,7 @@
 import argparse
 
 #Configurable variables
-tile_sizes = [32, 48, 64, 78, 92, 96, 110, 128, 147, 192, 225, 256]
+tile_sizes = [92, 96, 110, 128, 147, 192, 225, 256, 278, 340]
 
 function = 'dgeqrf'
 

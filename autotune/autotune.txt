@@ -1,10 +1,65 @@
+Next problem:
+    
+    Some tile sizes don't work very well. Why? I suspect that my sampling breaks
+    down because the total number of core functions being sampled is not large
+    enough for the law of large numbers to take effect. Solution? Run on very
+    large problems only. What about cholesky? Try using up the clip before running
+    anything to avoid cache effects. See if that gets more agreeable times.
+    In your output test, the first 4 numbers matched, but after that it broke down.
+    Do the dgemm thing to do a refinement pass on the search space of tile sizes.
+    
+Solved:
+    
+    Group linear heirarchies together as atomic units with the "always_run"
+    xml dare configuration tag.
+
+Possible solution:
+    
+    Have top level kernels. These define the initial probabilites.
+    The probabilities of lower level kernels depend on how many upper level
+    kernels have run. 
+    
+Problems with the approach:
+    
+    Flawed assumption: Running each sample according to a fixed probability
+                       will always lead to a representative subset of the whole
+                       run.
+
+    Why is it flawed: Because the heirarchy of function calls. One core_blas
+                      function calls a bunch of the underlying ones. By
+                      failing to run such a high level function, you effectively
+                      reduce how many samples of the underlying function are run.
+
+    How to get around this: Run a big enough problem that it doesn't matter?
+                            only run the top level function? <-- That should work.
+
+    What would have been a better way to autotune?? Dynamic probability scheduling?
+    
 Function tree:
     
+    Top level: core_dgeqrt, core_dormqr, core_dtsqrt, core_dtsmqr, dlacpy
+
     core_dtsqrt --> core_dtsmqr --> core_dparfb --> core_dpamm
+
+    core_dtsmqr --> core_dparfb --> core_dpamm
 
     There's 2 options here: run only the bottom nodes or run only the top
     nodes. I think running the top nodes is a better idea. Add a feature
     to always run certain kernels.
+
+    Investigate what happens when you sample kernels within a chain like
+    you had been doing.
+
+Solution:
+    
+    Simplest: Have a list of functions not to interefere with. Becomes
+              problematic once several plasma routines are called.
+    
+    Harder: Have a state variable to indicate the highest level function.
+            If it sets this variable, no other function under it should be
+            sampled?
+
+    You could try: Just returning PlasmaSuccess even when it didn't succeed.
 
 Note: Make sure to change the weak_attribute script to add the weak symbols
 to the C files instead of the h files, to align with Mark Gates's changes.

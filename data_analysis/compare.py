@@ -75,16 +75,19 @@ class comparison_class:
         self.spd = numpy.absolute(data_0.std_dev - data_1.std_dev)\
                    / (data_0.std_dev + data_1.std_dev) * 100
 
+        self.cpd = (data_0.count / data_1.count)
+
         self.stats_template = \
 '''
-{function:>11s}: avg diff: {apd:<3.3f}% std_dev diff: {spd:<3.3f}%
+{function:>11s}: avg diff: {apd:<3.3f}% std_dev diff: {spd:<3.3f}% ratio: {cpd:<3.3f}
 '''
     
     def comparison_string(self):
         
         return self.stats_template.format(function = self.function_name,\
                                           apd = self.apd,\
-                                          spd = self.spd)
+                                          spd = self.spd,\
+                                          cpd = self.cpd)
 
 #Functions
 #creates a dictionary of {function_name : raw_data object}
