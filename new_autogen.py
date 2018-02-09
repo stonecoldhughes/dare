@@ -685,7 +685,8 @@ class autotune_config_class:
 
     autotune.autotune_counter = {autotune_counter};
         
-    /* Populate each map with the kernels specified in the config file */
+    /* Populate each map with the data dependent core_functionsspecified 
+       in the config file */
     for(int i = 0; i < autotune.num_threads; ++i)
     {{
         autotune.iterations[i] = new unsigned int[TABLE_SIZE];
@@ -720,10 +721,11 @@ class autotune_config_class:
         autotune.data[i]->emplace(
                                  CORE_DPOTRF,
                                  new class fake_dpotrf_data(
-                                                           autotune.clip_size,
-                                                           autotune.tile_size,
-                                                           autotune.max_window_size
-                                                           )
+                                                autotune.clip_size,
+                                                autotune.tile_size,
+                                                autotune.max_window_size,
+                                                (void*)autotune.core[CORE_DPOTRF]
+                                                )
                                  );
         '''
                 

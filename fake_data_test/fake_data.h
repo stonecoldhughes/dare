@@ -1,10 +1,10 @@
 #include <string>
+#include "core_blas.h"
 #include "omp.h"
 #ifndef AUTOGEN_TYPES_H
 #define AUTOGEN_TYPES_H
 #include "autogen_types.h"
 #endif
-
 
 using namespace std;
 
@@ -67,7 +67,10 @@ class fake_dpotrf_data : public fake_data
 {
     public:
 
-        fake_dpotrf_data(int clip_size, int tile_size, int winsize);
+        fake_dpotrf_data(int clip_size,
+                         int tile_size,
+                         int winsize,
+                         void *core_dpotrf_ptr);
 
         ~fake_dpotrf_data();
 
@@ -89,4 +92,16 @@ class fake_dpotrf_data : public fake_data
         double *tile();
 
         void print_matrix_clip();
+    
+    protected:
+
+        /* Clip data is stored in memory that is likely not in cache.
+           Thus, tile times from clip elements used in actual data-dependent
+           core_function calls will be slower than actual.*/
+        /* Tile times from clip elements used outside of actual core_function
+           calls run too fast because the cache system is not handling large
+           amounts of matrix data in addition to these tiles.*/
+        /* The natural solution is to run a fraction too quickly and a fraction
+            too slowly, then the average time could be more accurate */
+        void waste_clip(void *core_dpotrf_ptr, int waste_fraction);
 };

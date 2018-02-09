@@ -100,7 +100,10 @@ void fake_data::append_time(double t)
 
 /* Concrete class fake_dpotrf_data object methods */
 
-fake_dpotrf_data::fake_dpotrf_data(int _clip_size, int _tile_size, int _winsize)
+fake_dpotrf_data::fake_dpotrf_data(int _clip_size,
+                                   int _tile_size,
+                                   int _winsize,
+                                   void *core_dpotrf_ptr)
     :
     fake_data(_clip_size, _tile_size, _winsize)
 {
@@ -112,6 +115,38 @@ fake_dpotrf_data::fake_dpotrf_data(int _clip_size, int _tile_size, int _winsize)
     }
 
     load_matrix_clip();
+
+    /* Obtain all tile times before any data dependent functions are
+       invoked. This was an attempt to eliminate cache effects*/
+    waste_clip(core_dpotrf_ptr, 2);
+
+    return;
+}
+
+/* Captain! Exhaust the clip preemptively to get accurate busy-wait times */
+void fake_dpotrf_data::waste_clip(void *core_dpotrf_ptr, int waste_fraction)
+{
+    int half = get_clip_size() / waste_fraction;
+
+    for(int i = 0; i < half; ++i)
+    {
+        double *ptr = tile();
+
+        int size = get_tile_size();
+
+        double t = omp_get_wtime();
+
+        ((core_dpotrf_hook_type)core_dpotrf_ptr)(
+                   PlasmaUpper,
+                   size,
+                   ptr,
+                   size
+                   );
+
+        double elapsed = omp_get_wtime() - t;
+
+        append_time(elapsed);
+    }
 
     return;
 }
