@@ -118,7 +118,7 @@ fake_dpotrf_data::fake_dpotrf_data(int _clip_size,
 
     /* Obtain all tile times before any data dependent functions are
        invoked. This was an attempt to eliminate cache effects*/
-    waste_clip(core_dpotrf_ptr, 2);
+    //waste_clip(core_dpotrf_ptr, 2);
 
     return;
 }

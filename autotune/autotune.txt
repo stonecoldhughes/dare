@@ -1,21 +1,58 @@
+Today:
+    
+    refactor main.cpp and reuse those classes for filter_points.cpp
+    
+Do:
+    
+    0. dgemm peak analysis
+    1. run on saturn
+    2. dynamic ratio checking
+    3. graph data analysis
+    3. Find the window of useful use cases. Make some graphs.
+
+Thought:
+    
+    What if you draw a parallel line between the endpoints of the line and
+    took the furthest point from that line? Essentially offset the curve that
+    the data follows? Large problems require less of an offset.
+
+    Best clip parameters: Very large clip, half of it is max window size,
+                          Small autotune counter always works. Increase the
+                          size of the autotune counter to spread out the clip
+                          usage for extremely large runs only. I've been running
+                          it on 1000x1000x20 iterations. (dpotrf)
+    
+    Current graph was made from n = 5000 x 3 iterations
+
+    Should you have a new plasma_init() and plasma_finalize() for each size?
+    Make this change in main.cpp of this directory
+
 Tasks:
     
     Research:
         
-        0. Preemptively run dpotrf clip
+        0. Some kind of final data analysis.
+
         1. Implement some kind of dynamic ratio checking & enforcement.
            check the ratio and modify the run parameters when a core_function
            is being skipped. Have a "balance_switch" int that selects between
            2 different run probabilites. It shifts itself back to the originally
            specified one once enough runs have happened?
+
+            0. Ratios must be specified in the autotune_config file.
+            1. 
+
+        2. Go ahead and do the dgemm peak analysis.
     
     Testing:
         
-        0. Run on Saturn.
+        0. Run dpotrf on Saturn.
+        1. Run dgeqrf on Saturn.
     
     Make output pretty:
 
         0. Do dgemm peak analysis
+
         1. Change performance reporting format to GFlops
 
 

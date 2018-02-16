@@ -22,8 +22,8 @@
     <function> core_dpamm </function>
     </always_run_functions>
     
-    <autotune_counter> 20 </autotune_counter>
-    <clip_size> 50 </clip_size>
-    <max_window_size> 10 </max_window_size>
+    <autotune_counter> 1 </autotune_counter>
+    <clip_size> 100 </clip_size>
+    <max_window_size> 50 </max_window_size>
     <output_file_name> autotune_data.txt </output_file_name>
 </config>

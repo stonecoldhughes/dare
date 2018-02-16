@@ -1,21 +1,20 @@
 import argparse
 
 #Configurable variables
-tile_sizes = [92, 96, 110, 128, 147, 192, 225, 256, 278, 340]
 
-function = 'dgeqrf'
+function = 'dpotrf'
 
-m = 1000
+m = 5000
 
 m_add = 0
 
-n = 1000
+n = 5000
 
 n_add = 0
 
-iterations = 5
+iterations = 3
 
-seed = 420
+seed = -1 
 
 raw_executable = './autotune_raw.bin'
 
@@ -39,11 +38,21 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument(
                    '-f', '--file',\
-                   help = 'generated config file', \
+                   help = 'name of config file to generate', \
                    default = 'config.txt'
                    )
 
+parser.add_argument(
+                   '-t', '--tile_sizes',\
+                   help = 'name of file containing a tile size on each line',\
+                   required = True
+                   )
+
 args = parser.parse_args()
+
+#Get the tile_sizes to test
+tile_sizes = list(map(lambda x: int(x.strip()),\
+                      open(args.tile_sizes, 'r').readlines()))
 
 config_file = open(args.file, 'w')
 
