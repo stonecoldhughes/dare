@@ -14,7 +14,7 @@ test_dir = '/Users/hhughe11/research/dare/autotune'
 
 test_ex = './autotune.bin'
 
-autogen_script = 'new_autogen.py'
+autogen_script = 'autogen.py'
 
 this_dir = os.getcwd()
 

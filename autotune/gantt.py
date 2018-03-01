@@ -1,3 +1,8 @@
+'''
+This file analyzes a DARE trace output file and creates a Gantt
+chart out of it with a legent. Provide an XML config file to relate
+core functions to colors in the chart.
+'''
 #Captain! The length of the color map is used to determine how long the bars
 #In the bar graph should be. This seems like a problem.
 #Write a batch script to gather data on slurm
@@ -165,7 +170,10 @@ for f in file_list:
     legend_axis.set_yticklabels(legend_labels)
     legend_axis.set_title(f.name + ' Legend')
 
-    legend_axis.barh(legend_ypos, bar_lengths, color = legend_color, align = 'center')
+    legend_axis.barh(legend_ypos,\
+                     bar_lengths,\
+                     color = legend_color,\
+                     align = 'center')
 
     #Don't show the graph, just see how long it takes to render
     plt.show()

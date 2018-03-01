@@ -4,15 +4,15 @@ import argparse
 
 function = 'dpotrf'
 
-m = 5000
+m = 6000
 
 m_add = 0
 
-n = 5000
+n = 6000
 
 n_add = 0
 
-iterations = 3
+iterations = 1
 
 seed = -1 
 

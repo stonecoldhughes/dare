@@ -1,3 +1,11 @@
+Find a way to test core_dpamm
+move testing crap into it's own folder
+Moving forward:
+    
+    The only thing left to do is to run it on huge problems on saturn.
+    Possibly, you could run it with the majority contributing core function
+    only. core_dgemm for plasma_dpotrf and core_dpamm for plasma_dgeqrf
+
 Today:
     
     refactor main.cpp and reuse those classes for filter_points.cpp

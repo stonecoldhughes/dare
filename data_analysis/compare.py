@@ -38,13 +38,15 @@ class stats_class:
 
         self.mean = numpy.mean(times)
 
+        self.total_time = numpy.sum(times)
+
         self.std_dev = numpy.std(times)
 
         self.count = len(times)
 
         self.stats_template = \
 '''
-{function_name:>11s}: avg: {mean:<0.7f} std_dev: {std_dev:0.7f} count: {count:<5d}
+{function_name:>11s}: avg: {mean:<0.7f} std_dev: {std_dev:0.7f} count: {count:<5d} total_time: {total_time}
 '''
     
     def stats_string(self):
@@ -52,7 +54,8 @@ class stats_class:
         return self.stats_template.format(function_name = self.function_name,\
                                           mean = self.mean,\
                                           std_dev = self.std_dev,\
-                                          count = self.count)
+                                          count = self.count,\
+                                          total_time = self.total_time)
         
 
 #Represents statistical relation between two datasets
@@ -77,9 +80,11 @@ class comparison_class:
 
         self.cpd = (data_0.count / data_1.count)
 
+        self.tpd = data_0.total_time / data_1.total_time 
+
         self.stats_template = \
 '''
-{function:>11s}: avg diff: {apd:<3.3f}% std_dev diff: {spd:<3.3f}% ratio: {cpd:<3.3f}
+{function:>11s}: avg diff: {apd:<3.3f}% std_dev diff: {spd:<3.3f}% ratio: {cpd:<3.3f} time_ratio: {tpd}
 '''
     
     def comparison_string(self):
@@ -87,7 +92,8 @@ class comparison_class:
         return self.stats_template.format(function = self.function_name,\
                                           apd = self.apd,\
                                           spd = self.spd,\
-                                          cpd = self.cpd)
+                                          cpd = self.cpd,\
+                                          tpd = self.tpd)
 
 #Functions
 #creates a dictionary of {function_name : raw_data object}
