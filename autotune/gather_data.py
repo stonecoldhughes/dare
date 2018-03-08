@@ -17,98 +17,6 @@ import re
 
 iterations = 2
 
-#Also have an "analyze_data" function where you do the gradients and such
-#Plot the points. Assume each line has the same x values
-def plot_point_data(xdata, ydata, line_labels):
-
-    n_lines = len(xdata)
-    
-    legend_graph, legend_axis = plt.subplots()
-
-    graph, axis = plt.subplots()
-
-    ymax = -1
-
-    ymin = sys.maxsize
-
-    xmax = -1
-
-    xmin = sys.maxsize
-    
-    #Plot each line on the same graph
-    for i in range (0, n_lines):
-        
-        ylist = ydata[i]
-
-        y = max(ylist)
-
-        if(y > ymax):
-            
-            ymax = y
-        
-        y = min(ylist)
-        
-        if(y < ymin):
-
-            ymin = y
-    
-        #xdata[i] is a list of (m, n) tuples. You only want "m"
-        xlist = xdata[i]
-
-        x = max(xlist)
-
-        if(x > xmax):
-
-            xmax = x
-
-        x = min(xlist)
-
-        if(x < xmin):
-
-            xmin = x
-        
-        
-        #Captain! Generate the label somehow. Make the first element a label
-        #string and put that at the front of each set of line points?
-        axis.plot(
-                 xlist, \
-                 ylist, \
-                 linestyle = '-', \
-                 marker = '.', \
-                 )
-
-
-        #Plot the legend in a seperate graph
-        legend_axis.plot(
-                        [], \
-                        [], \
-                        label = line_labels[i]
-                        )
-
-    #Put a buffer on the min and max
-    xbuf = (xmax - xmin) / 5
-
-    ybuf = (ymax - ymin) / 5
-
-    axis.set_xlim(xmin - xbuf, xmax + xbuf)
-
-    axis.set_ylim(ymin - ybuf, ymax + ybuf)
-
-    axis.set_title("Performance Characteristics")
-
-    axis.set_xlabel('m')
-
-    axis.set_ylabel('time')
-
-    #Show the legend in a seperate graph
-    legend = legend_axis.legend(
-                               loc = 'center', \
-                               ncol = 2, \
-                               fontsize = 'xx-large' \
-                               )
-
-    plt.show()
-
 #Print out the data points you collected
 def dump_point_data(xdata, ydata, line_labels):
 
@@ -124,7 +32,7 @@ def dump_point_data(xdata, ydata, line_labels):
 
         n_points = len(xlist)
 
-        f.write('line label: {label} - best tile size: {tile_size}\n'\
+        f.write('label: {label}\nbest: {tile_size}\n'\
                .format(label = line_labels[i],
                        tile_size = xlist[ylist.index(min(ylist))]))
 
@@ -264,5 +172,3 @@ while(i < len(lines)):
         i = i + 1
 
 dump_point_data(xdata, ydata, line_labels)
-
-plot_point_data(xdata, ydata, line_labels)

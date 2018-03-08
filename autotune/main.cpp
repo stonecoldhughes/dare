@@ -5,6 +5,8 @@ using namespace std;
 int main(int argc, char **argv)
 {
     /* number of expected command line arguments */
+    /* Captain! Fix this so different functions get different types of 
+       return values */
     int n_args = 9;
 
     class command_args cmd_args(argc, argv, n_args);

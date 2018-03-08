@@ -2,13 +2,13 @@ import argparse
 
 #Configurable variables
 
-function = 'dpotrf'
+function = 'dgeqrf'
 
-m = 6000
+m = 1000
 
 m_add = 0
 
-n = 6000
+n = 1000
 
 n_add = 0
 

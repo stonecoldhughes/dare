@@ -1,0 +1,25 @@
+<config>
+
+<python_ex> /Users/hhughe11/python/bin/python </python_ex>
+
+<dare_dir> /Users/hhughe11/research/dare </dare_dir>
+
+<test_dir> /Users/hhughe11/research/dare/autotune </test_dir>
+
+<test_ex> ./autotune.bin </test_ex>
+
+<autogen_script> autogen.py </autogen_script>
+
+<trace_config_xml> trace_config.xml </trace_config_xml>
+
+<autotune_config_xml> autotune_config.xml  </autotune_config_xml>
+
+<trace_test_output> trace_data.txt </trace_test_output>
+
+<control_test_output> control_data.txt </control_test_output>
+
+<autotune_test_output> autotune_data.txt </autotune_test_output>
+
+<compare_script> compare.py </compare_script>
+
+</config>

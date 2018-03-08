@@ -1,5 +1,8 @@
-Find a way to test core_dpamm
-move testing crap into it's own folder
+Tasks:
+    
+    Seperate data acquisition and analysis in run.py and data_analysis.py
+    Add a gflops tag to the output.txt output.
+
 Moving forward:
     
     The only thing left to do is to run it on huge problems on saturn.
