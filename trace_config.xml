@@ -27,23 +27,23 @@
         <pair> <key> core_dpotrf </key> <value> "SeaGreen" </value> </pair>
     </color_list>
 
-    <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
+    <plasma_dir> /home/hhughe11/plasma-17.1 </plasma_dir>
 
-    <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>
-    <cpp_compiler> /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0 </cpp_compiler>
+    <c_compiler> gcc </c_compiler>
+    <cpp_compiler> g++ </cpp_compiler>
 
     <include_dirs>
-    <dir> /Users/hhughe11/research/dare </dir>
-    <dir> /Users/hhughe11/research/dare/fake_data_test </dir>
-    <dir> /opt/intel/mkl/include </dir>
+    <dir> /sw/intel/2018/compilers_and_libraries_2018.0.128/linux/mkl/include </dir>
+    <dir> /home/hhughe11/dare/fake_data_test </dir>
+    <dir> /home/hhughe11/dare </dir>
     </include_dirs>
 
     <trace_h>
-    <h> /Users/hhughe11/research/dare/plasma_trace.h </h>
+    <h> /home/hhughe11/dare/plasma_trace.h </h>
     </trace_h>
 
     <trace_c>
-    <c> /Users/hhughe11/research/dare/trace.c </c>
+    <c> /home/hhughe11/dare/plasma_trace.c </c>
     </trace_c>
     
     <output_file_name> trace_data.txt </output_file_name>

@@ -1,10 +1,10 @@
 <config>
 
-<python_ex> /Users/hhughe11/python/bin/python </python_ex>
+<python_ex> python3 </python_ex>
 
-<dare_dir> /Users/hhughe11/research/dare </dare_dir>
+<dare_dir> /home/hhughe11/dare </dare_dir>
 
-<test_dir> /Users/hhughe11/research/dare/autotune </test_dir>
+<test_dir> /home/hhughe11/dare/autotune </test_dir>
 
 <test_ex> ./autotune.bin </test_ex>
 

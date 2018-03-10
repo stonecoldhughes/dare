@@ -3,15 +3,15 @@
     <use_stdin> 1 </use_stdin>
     <use_default> 1 </use_default>
     <execution_ratio> stdin </execution_ratio>
-    <plasma_dir> /Users/hhughe11/plasma-17.1 </plasma_dir>
+    <plasma_dir> /home/hhughe11/plasma-17.1 </plasma_dir>
     <tile_size> stdin </tile_size>    
     <include_dirs>
-    <dir> /opt/intel/mkl/include </dir>
-    <dir> /Users/hhughe11/research/dare/fake_data_test </dir>
-    <dir> /Users/hhughe11/research/dare </dir>
+    <dir> /sw/intel/2018/compilers_and_libraries_2018.0.128/linux/mkl/include </dir>
+    <dir> /home/hhughe11/dare/fake_data_test </dir>
+    <dir> /home/hhughe11/dare </dir>
     </include_dirs>
-    <c_compiler> /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0 </c_compiler>
-    <cpp_compiler> /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0 </cpp_compiler>
+    <c_compiler> gcc </c_compiler>
+    <cpp_compiler> g++ </cpp_compiler>
 
     <data_dep_functions>
     <function> core_dpotrf </function>
