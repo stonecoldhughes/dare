@@ -1,8 +1,11 @@
-#For autotune mode, stdin arguments must be in the format:
-#num_args kernel_fraction 10:100 tile_size 128 (for example)
-#use_stdin must be indicated in the config file.
-#all arguments that use stdin must say "stdin" as their text field
-#in the config file
+'''
+For autotune mode, stdin arguments must be in the format:
+num_args kernel_fraction 10:100 tile_size 128 (for example)
+use_stdin must be indicated in the config file.
+all arguments that use stdin must say "stdin" as their text field
+in the config file
+'''
+
 import xml.etree.ElementTree as xml
 import subprocess
 from pathlib import Path

@@ -1,0 +1,28 @@
+<config>
+    <function> dgeqrf </function>
+    <m> 1000 </m>
+    <m_add> 0 </m_add>
+    <n> 1000 </n>
+    <n_add> 0 </n_add>
+    <iterations> 1 </iterations>
+    <seed> -1 </seed>
+    <raw_executable> ./autotune_raw.bin </raw_executable>
+    <executable> ./autotune.bin </executable>
+    <execution_ratios>
+        <ratio> 2:2 </ratio>
+        <ratio> 1:2 </ratio>
+    </execution_ratios>
+    <line_labels> 
+        <line_label> full </line_label>
+        <line_label> half </line_label>
+    </line_labels>
+    <tile_sizes>
+        <tile_size> 96 </tile_size>
+        <tile_size> 128 </tile_size>
+        <tile_size> 192 </tile_size>
+        <tile_size> 256 </tile_size>
+        <tile_size> 350 </tile_size>
+        <tile_size> 512 </tile_size>
+    </tile_sizes>
+    <do_raw_run> 1 </do_raw_run>
+</config>
