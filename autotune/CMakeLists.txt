@@ -1,5 +1,5 @@
-set(CMAKE_CXX_COMPILER /Users/hhughe11/research/gcc_compiler/bin/g++-6.3.0)
-set(CMAKE_C_COMPILER /Users/hhughe11/research/gcc_compiler/bin/gcc-6.3.0)
+set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_COMPILER gcc)
 
 project(optimize C CXX)
 
@@ -28,7 +28,7 @@ add_executable(
 
 target_link_libraries(
                      autotune.bin
-                     ${DARE_DIR}/libprofile_lib.dylib
+                     ${DARE_DIR}/libprofile_lib.so
                      ${PLASMA_DIR}/lib/libplasma.so
                      ${PLASMA_DIR}/lib/libcoreblas.so
                      -Wl,-rpath,${PLASMA_DIR}/lib

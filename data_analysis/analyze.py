@@ -42,7 +42,7 @@ def run_trace_executable(cmd, src, destination, iterations, config):
 
     #Save output to this directory
     os.rename(config.test_dir + '/' + src,\
-              this_dir + '/' + destination)
+              config.this_dir + '/' + destination)
 
     return
 
@@ -59,7 +59,7 @@ def run_autotune_executable(args, stdin_args, iterations, config):
         out = p.communicate(stdin_args)
 
     os.rename(config.test_dir + '/' + config.autotune_test_output,\
-              this_dir + '/' + config.autotune_test_output)
+              config.this_dir + '/' + config.autotune_test_output)
 
     return
 
@@ -94,6 +94,7 @@ class config_class:
         self.trace_test_output = ''
         self.control_test_output = ''
         self.control_script = ''
+        self.this_dir = ''
 
 
 def parse_xml_config():
@@ -237,7 +238,7 @@ def parse_xml_config():
 
         sys.exit()
     
-    this_dir = os.getcwd()
+    config.this_dir = os.getcwd()
 
     return config
 
