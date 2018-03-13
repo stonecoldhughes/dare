@@ -1,6 +1,8 @@
 Tasks:
     
-    Put all the config info into an XML config file
+    Put all the config info into an XML config file, including runtime parameters.
+    For each test, pick a tile size and run the data analyzer to indicate why
+    it succeeds or fails. Reformat the output of the data analysis.
 
 development direction:
     

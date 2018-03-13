@@ -1,8 +1,34 @@
+Testing goals:
+    
+    Main test results categories. Do for dgeqrf, dpotrf, and lu:
+    
+    Large square matrices low iterations:
+        
+        High fractions to illustrate relative orderings.
+        
+        Low & extremely low fractions to illustrate limits of
+        the tuner.
+
+    Small square matrices high iterations:
+
+    Large irregular matrices low iterations:
+
+    Small irregular matrices high iterations:
+
+    Failure test results:
+        
+        Small matrices to show that it breaks down eventually.
+
+    Real life test results:
+        
+        Randomized irregular matrices (high iterations?)
+
+        Mixed matrix operations. Try several routines in the same
+        Plasma application.
+
 Tasks:
     
-    Seperate data acquisition and analysis in run.py and data_analysis.py
-    Add a gflops tag to the output.txt output.
-
+    Add functionality to output GFlops in addition to just regular performance
 Moving forward:
     
     The only thing left to do is to run it on huge problems on saturn.
