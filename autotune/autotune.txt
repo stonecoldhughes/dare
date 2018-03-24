@@ -1,3 +1,34 @@
+Now just do the dgemm test and then you will have a good number of points to test.
+Do this when you get back before you go to bed.
+
+See if the fastest points for dgemm are also the fastest for dgeqrf
+
+How I will collect the data:
+
+    plot_data.py needs to read gen_config.py which needs to have a field called
+    "cores" and "machine". It may need "flops" as well. It will output GFlops
+    as well with the same colors.
+
+    First, you need the list of points to test. Obtain these with a dgemm test.
+
+    Third, update autotuner to add up the times of each run and fractional run
+    and tell by what factor the tuner found the fastest size.
+    
+    For a given routine:
+        
+        Large problem size small iterations to small problem size with many.
+        Plot with 3 kernel fractions showing the smallest useful fraction.
+        Show that the bottom one is not useful. Do for all routines. On failures
+        or successes, run the analyzer to show numbers indicating success.
+
+    Write a report:
+        
+        Include this with a report and graphs.
+
+Task:
+    
+    Autotuner needs to output GFlops in addition to execution time.
+    
 Testing goals:
     
     Main test results categories. Do for dgeqrf, dpotrf, and lu:
