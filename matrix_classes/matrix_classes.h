@@ -164,4 +164,6 @@ namespace run_iterations
     void run_dpotrf_iterations(class command_args &cmd_args);
     
     void run_dgemm_iterations(class command_args &cmd_args);
+
+    extern int fastest_n;
 }

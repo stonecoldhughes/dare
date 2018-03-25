@@ -3,6 +3,8 @@
 
 using namespace std;
 
+int run_iterations::fastest_n = 1;
+
 void run_iterations::run_dpotrf_iterations(class command_args &cmd_args)
 {
     plasma_init();
@@ -87,7 +89,7 @@ void run_iterations::run_dgemm_iterations(class command_args &cmd_args)
                                    cmd_args.m_add,
                                    cmd_args.n,
                                    cmd_args.n_add,
-                                   5,
+                                   run_iterations::fastest_n,
                                    cmd_args.iterations
                                    );
 
@@ -384,7 +386,7 @@ void dgemm_matrix_class::insert(int tile_size)
 
     fastest_n_map.emplace(elapsed, tile_size);
     
-    if(fastest_n_map.size() > fastest_n) 
+    if(fastest_n_map.size() > run_iterations::fastest_n) 
     {
         fastest_n_map.erase(--fastest_n_map.end());
     }
