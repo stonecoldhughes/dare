@@ -28,7 +28,7 @@ add_executable(
 
 target_link_libraries(
                      autotune.bin
-                     ${DARE_DIR}/libprofile_lib.so
+                     ${DARE_DIR}/libprofile_lib.dylib
                      ${PLASMA_DIR}/lib/libplasma.so
                      ${PLASMA_DIR}/lib/libcoreblas.so
                      -Wl,-rpath,${PLASMA_DIR}/lib
