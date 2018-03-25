@@ -1,25 +1,123 @@
 '''
 This script graphs the performance of Plasma applications under autotuning
 '''
+import xml.etree.ElementTree as xml
 import argparse
 import matplotlib.pyplot as plt
 import sys
 import re
 
+#String templates
+title_template = \
+'''{function}
+{cpu}
+{cores} cores
+{m}x{n} matrix
+{iterations} iterations
+'''
+
+class config_class:
+    
+    def __init__(self, args):
+        
+        tree = xml.parse(args.xml_config)
+
+        root = tree.getroot()
+
+        tag = root.find('function')
+
+        if(tag != None):
+            
+            self.function = tag.text.strip()
+
+        else:
+            
+            print('function tag not present.' + \
+                  'Name of the Plasma routine being tested.')
+
+            sys.exit()
+
+        tag = root.find('cores')
+
+        if(tag != None):
+            
+            self.cores = tag.text.strip()
+
+        else:
+            
+            print('cores tag not present. Number of cores the test was run on.')
+
+            sys.exit()
+
+        tag = root.find('cpu')
+
+        if(tag != None):
+            
+            self.cpu = tag.text.strip()
+
+        else:
+            
+            print('cpu tag not present. Make and model of the CPU the test ran on.')
+
+            sys.exit()
+
+        tag = root.find('iterations')
+
+        if(tag != None):
+            
+            self.iterations = tag.text.strip()
+
+        else:
+            
+            print('iterations tag not present. How many iterations to run')
+
+            sys.exit()
+
+        tag = root.find('m')
+
+        if(tag != None):
+            
+            self.m = float(tag.text.strip())
+
+        else:
+            
+            print('m tag not present. Rows of matrix')
+            
+            sys.exit()
+
+        tag = root.find('n')
+
+        if(tag != None):
+            
+            self.n = float(tag.text.strip())
+
+        else:
+            
+            print('n tag not present. Columns of matrix')
+
+            sys.exit()
+
+
 #Regexes
-label_regex = re.compile(r'label:\s*(.*)')
+class regex_class:
 
-best_regex = re.compile(r'best:\s*(\d*)')
+    def __init__(self):
 
-xy_regex = re.compile(r'x = (\d*) y = (\d*\.?\d*)')
+        self.label_regex = re.compile(r'label:\s*(.*)')
 
-def plot_point_data(xdata, ydata, line_labels, best_index):
+        self.best_regex = re.compile(r'best:\s*(\d*)')
+
+        self.xy_regex = re.compile(r'x = (\d*) y = (\d*\.?\d*)')
+
+def plot_point_data(xdata, ydata, line_labels, best_index, config):
 
     n_lines = len(xdata)
     
     legend_graph, legend_axis = plt.subplots()
 
-    graph, axis = plt.subplots()
+    time_graph, time_axis = plt.subplots()
+
+    gflops_graph, gflops_axis = plt.subplots()
 
     ymax = -1
 
@@ -32,21 +130,23 @@ def plot_point_data(xdata, ydata, line_labels, best_index):
     #Plot each line on the same graph
     for i in range (0, n_lines):
         
-        ylist = ydata[i]
+        #Find the max and min values
+        time_ylist = ydata[i]
 
-        y = max(ylist)
+        gflops_ylist = gflops_sequence(time_ylist, config)
+
+        y = max(time_ylist)
 
         if(y > ymax):
             
             ymax = y
         
-        y = min(ylist)
+        y = min(time_ylist)
         
         if(y < ymin):
 
             ymin = y
     
-        #xdata[i] is a list of (m, n) tuples. You only want "m"
         xlist = xdata[i]
 
         x = max(xlist)
@@ -61,21 +161,35 @@ def plot_point_data(xdata, ydata, line_labels, best_index):
 
             xmin = x
         
-        #Captain! Generate the label somehow. Make the first element a label
-        #string and put that at the front of each set of line points?
-        axis.plot(
+        #Plot data as time 
+        time_axis.plot(
                  xlist, \
-                 ylist, \
+                 time_ylist, \
                  linestyle = '-', \
                  marker = '.', \
                  )
 
         #Mark the best point
-        axis.plot(
+        time_axis.plot(
                  xlist[best_index[i]],\
-                 ylist[best_index[i]],\
+                 time_ylist[best_index[i]],\
                  'b*'\
                  )
+
+        #Plot data in gflops
+        gflops_axis.plot(
+                        xlist,\
+                        gflops_ylist,\
+                        linestyle = '-',\
+                        marker = '.'
+                        )
+
+        #Mark the best point
+        gflops_axis.plot(
+                        xlist[best_index[i]],\
+                        gflops_ylist[best_index[i]],\
+                        'b*'\
+                        )
 
 
         #Plot the legend in a seperate graph
@@ -85,29 +199,84 @@ def plot_point_data(xdata, ydata, line_labels, best_index):
                         label = line_labels[i]
                         )
 
-    #Put a buffer on the min and max
+    #Set the max and min axis limits
     xbuf = (xmax - xmin) / 5
 
     ybuf = (ymax - ymin) / 5
 
-    axis.set_xlim(xmin - xbuf, xmax + xbuf)
+    time_axis.set_xlim(xmin - xbuf, xmax + xbuf)
 
-    axis.set_ylim(ymin - ybuf, ymax + ybuf)
+    time_axis.set_ylim(ymin - ybuf, ymax + ybuf)
 
-    axis.set_title("Performance Characteristics")
+    #Set the max and min axis limits for the performance graph
+    gflops_axis.set_xlim(xmin - xbuf, xmax + xbuf)
 
-    axis.set_xlabel('m')
+    #Set the title and axis labels
+    time_axis.set_title('Execution_time')
 
-    axis.set_ylabel('time')
+    time_axis.set_xlabel('tile size')
+
+    time_axis.set_ylabel('time (s)')
+
+    gflops_axis.set_title('Performance')
+
+    gflops_axis.set_xlabel('tile size')
+
+    gflops_axis.set_ylabel('gflops')
 
     #Show the legend in a seperate graph
     legend = legend_axis.legend(
-                               loc = 'center', \
+                               loc = 'lower center', \
                                ncol = 2, \
                                fontsize = 'xx-large' \
                                )
 
+    legend_axis.set_title('Legend')
+
+    legend_graph.text(0.5, 0.6, get_title(config),\
+                     horizontalalignment = 'center',\
+                     verticalalignment = 'center',\
+                     fontsize = 20,\
+                     bbox = dict(boxstyle = 'square',\
+                                 facecolor = '#33ccff',\
+                                 edgecolor = 'black'))
+
     plt.show()
+
+def gflops_sequence(time_ylist, config):
+    
+    gflops_ylist = []
+
+    for t in time_ylist:
+        
+        gflops_ylist.append(gflops(t, config))
+
+    return gflops_ylist
+
+def gflops(t, config):
+    
+    if(config.function == 'dgeqrf'):
+        
+        ops = 2 * config.m * config.n**2 - 2*config.n**3 / 3
+
+    else:
+        
+        print('unrecognized function')
+
+        sys.exit()
+
+    g = ops / t / 1e9
+
+    return g
+
+def get_title(config):
+    
+    return title_template.format(function = config.function,\
+                                 cpu = config.cpu,\
+                                 cores = config.cores,\
+                                 m = config.m,\
+                                 n = config.n,\
+                                 iterations = config.iterations)
 
 def find_best_index(xdata, ydata):
     
@@ -122,15 +291,23 @@ def find_best_index(xdata, ydata):
 #Main code
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-f', '--file', \
+parser.add_argument('-d', '--data', \
                     help = 'file containing data to plot', \
+                    required = True)
+
+parser.add_argument('-x', '--xml-config', \
+                    help = 'XML config file', \
                     required = True)
 
 args = parser.parse_args()
 
-arg_file = open(args.file, 'r')
+arg_file = open(args.data, 'r')
 
 lines = arg_file.readlines()
+
+config = config_class(args)
+
+rgx = regex_class()
 
 #at index "i", xdata contains x points for a curve,
 #ydata contains y points, and line_labels contains the name of the curve
@@ -142,11 +319,11 @@ line_labels = []
 
 for line in lines:
     
-    label_match = label_regex.match(line)
+    label_match = rgx.label_regex.match(line)
 
-    best_match = best_regex.match(line)
+    best_match = rgx.best_regex.match(line)
 
-    xy_match = xy_regex.match(line)
+    xy_match = rgx.xy_regex.match(line)
 
     if(label_match != None):
         
@@ -169,4 +346,4 @@ for line in lines:
 #best_index finds the index for the best point
 best_index = find_best_index(xdata, ydata)
 
-plot_point_data(xdata, ydata, line_labels, best_index)
+plot_point_data(xdata, ydata, line_labels, best_index, config)
