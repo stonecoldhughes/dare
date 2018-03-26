@@ -3,7 +3,7 @@
 
 using namespace std;
 
-int run_iterations::fastest_n = 1;
+int run_iterations::fastest_n = 5;
 
 void run_iterations::run_dpotrf_iterations(class command_args &cmd_args)
 {
