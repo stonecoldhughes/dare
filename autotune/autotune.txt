@@ -1,7 +1,8 @@
-Now just do the dgemm test and then you will have a good number of points to test.
-Do this when you get back before you go to bed.
+See if dgemm picks the same points with the same tile sizes. Then run it with a
+shitton of tile sizes and run those. Have some bad ones and good ones.
 
-See if the fastest points for dgemm are also the fastest for dgeqrf
+The goal here is a set of tile sizes that really shows how good my system is
+at finding the best one. Test the correlation for all these routines.
 
 How I will collect the data:
 
