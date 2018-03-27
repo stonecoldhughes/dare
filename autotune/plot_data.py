@@ -274,8 +274,8 @@ def get_title(config):
     return title_template.format(function = config.function,\
                                  cpu = config.cpu,\
                                  cores = config.cores,\
-                                 m = config.m,\
-                                 n = config.n,\
+                                 m = int(config.m),\
+                                 n = int(config.n),\
                                  iterations = config.iterations)
 
 def find_best_index(xdata, ydata):

@@ -1,9 +1,3 @@
-See if dgemm picks the same points with the same tile sizes. Then run it with a
-shitton of tile sizes and run those. Have some bad ones and good ones.
-
-The goal here is a set of tile sizes that really shows how good my system is
-at finding the best one. Test the correlation for all these routines.
-
 How I will collect the data:
 
     plot_data.py needs to read gen_config.py which needs to have a field called
