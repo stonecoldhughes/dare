@@ -3,7 +3,7 @@
 
 using namespace std;
 
-int run_iterations::fastest_n = 5;
+int run_iterations::fastest_n = 500;
 
 void run_iterations::run_dpotrf_iterations(class command_args &cmd_args)
 {
@@ -386,10 +386,12 @@ void dgemm_matrix_class::insert(int tile_size)
 
     fastest_n_map.emplace(elapsed, tile_size);
     
+    /*
     if(fastest_n_map.size() > run_iterations::fastest_n) 
     {
         fastest_n_map.erase(--fastest_n_map.end());
     }
+    */
 
     return;
 }

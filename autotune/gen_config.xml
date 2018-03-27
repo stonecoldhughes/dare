@@ -2,9 +2,9 @@
     <function> dgeqrf </function>
     <cores> 20 </cores>
     <cpu> Haswell E5-2650 v3 </cpu>
-    <m> 30000 </m>
+    <m> 32000 </m>
     <m_add> 0 </m_add>
-    <n> 30000 </n>
+    <n> 32000 </n>
     <n_add> 0 </n_add>
     <iterations> 3 </iterations>
     <seed> -1 </seed>
