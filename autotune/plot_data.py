@@ -12,6 +12,7 @@ title_template = \
 '''{function}
 {cpu}
 {cores} cores
+{ram} RAM
 {m}x{n} matrix
 {iterations} iterations
 '''
@@ -94,6 +95,18 @@ class config_class:
         else:
             
             print('n tag not present. Columns of matrix')
+
+            sys.exit()
+
+        tag = root.find('ram')
+
+        if(tag != None):
+            
+            self.ram = tag.text.strip()
+
+        else:
+            
+            print('ram tag not present. How much memory on the system')
 
             sys.exit()
 
@@ -276,6 +289,7 @@ def get_title(config):
                                  cores = config.cores,\
                                  m = int(config.m),\
                                  n = int(config.n),\
+                                 ram = config.ram,\
                                  iterations = config.iterations)
 
 def find_best_index(xdata, ydata):
