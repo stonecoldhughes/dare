@@ -18,11 +18,11 @@ import re
 iterations = 2
 
 #Print out the data points you collected
-def dump_point_data(xdata, ydata, line_labels):
+def dump_point_data(xdata, ydata, line_labels, output_file):
 
     total_lines = len(xdata)
 
-    f = open('output.txt', 'w')
+    f = open(output_file, 'w')
 
     for i in range(0, total_lines):
         
@@ -86,6 +86,10 @@ parser.add_argument(
                    help = 'File containing executable parameters', \
                    required = True
                    )
+
+parser.add_argument('-f', '--file',\
+                    help = 'desired name of output file',\
+                    default = 'output.txt')
 
 args = parser.parse_args()
 
@@ -171,4 +175,6 @@ while(i < len(lines)):
         
         i = i + 1
 
-dump_point_data(xdata, ydata, line_labels)
+output_file = args.file
+
+dump_point_data(xdata, ydata, line_labels, output_file)
