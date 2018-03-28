@@ -108,6 +108,8 @@ arg_file = open(args.parameters, 'r')
 #Read the contents of the file into a data structure.
 lines = arg_file.readlines()
 
+arg_file.close()
+
 i = 0
 
 while(i < len(lines)):
