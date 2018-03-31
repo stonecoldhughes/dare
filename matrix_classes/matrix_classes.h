@@ -73,6 +73,24 @@ template<class T> class matrix_base
         static int dim_rand(int num, int rand_add);
 };
 
+/* Template specialization derived class for testing dgetrf */
+class dgetrf_matrix_class : public matrix_base<double>
+{
+    public:
+        
+        dgetrf_matrix_class(int m, int m_add, int n, int n_add);
+
+        ~dgetrf_matrix_class();
+
+        void print_matrix();
+
+        int *ipiv;
+
+    protected:
+        
+        void gen_matrix();
+};
+
 /* Template specialization derived class for testing dpotrf */
 class dpotrf_matrix_class : public matrix_base<double>
 {
@@ -164,6 +182,8 @@ namespace run_iterations
     void run_dpotrf_iterations(class command_args &cmd_args);
     
     void run_dgemm_iterations(class command_args &cmd_args);
+
+    void run_dgetrf_iterations(class command_args &cmd_args);
 
     extern int fastest_n;
 }

@@ -43,6 +43,45 @@ void run_iterations::run_dpotrf_iterations(class command_args &cmd_args)
     return;
 }
 
+void run_iterations::run_dgetrf_iterations(class command_args &cmd_args)
+{
+    plasma_init();
+    
+    if(cmd_args.tile_size != -1) plasma_set(PlasmaNb, cmd_args.tile_size);
+    
+    for(int i =0; i < cmd_args.iterations; ++i)
+    {
+        class dgetrf_matrix_class matrix(
+                                        cmd_args.m,
+                                        cmd_args.m_add,
+                                        cmd_args.n,
+                                        cmd_args.n_add
+                                        );
+
+        int ret_val = plasma_dgetrf(
+                                   matrix.m,
+                                   matrix.n,
+                                   matrix.matrix_0,
+                                   matrix.leading_dim,
+                                   matrix.ipiv
+                                   );
+
+        if(ret_val != 0)
+        {
+            printf(
+                  "iteration %d failed with return value: %d\n",
+                  i, ret_val
+                  );
+
+            exit(0);
+        }
+    }
+
+    plasma_finalize();
+
+    return;
+}
+
 void run_iterations::run_dgeqrf_iterations(class command_args &cmd_args)
 {
     plasma_init();
@@ -159,6 +198,46 @@ template<class T> int matrix_base<T>::dim_rand(int number, int rand_add)
     if(rand_add == 0) return number;
 
     else return number + (rand() % ++rand_add);
+}
+
+dgetrf_matrix_class::dgetrf_matrix_class(int _m, int _m_add, int _n, int _n_add)
+    :
+    matrix_base(_m, _m_add, _n, _n_add)
+{
+    gen_matrix();
+
+    ipiv = new int[m * sizeof(int)];
+
+    return;
+}
+
+dgetrf_matrix_class::~dgetrf_matrix_class()
+{
+    delete[] ipiv;
+
+    return;
+}
+
+void dgetrf_matrix_class::gen_matrix()
+{
+    for(int i = 0; i < m; ++i)
+    {
+        for(int j = 0; j < n; ++j)
+        {
+            double val = (double)((rand() % ELEMENT_MAX) + 1);
+
+            matrix_0[ i * n + j ] = val;
+        }
+    }
+
+    return;
+}
+
+void dgetrf_matrix_class::print_matrix()
+{
+    /* doesn't need to do anything... */
+
+    return;
 }
 
 dpotrf_matrix_class::dpotrf_matrix_class(int _m, int _m_add, int _n, int _n_add)

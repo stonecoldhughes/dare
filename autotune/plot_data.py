@@ -272,6 +272,14 @@ def gflops(t, config):
         
         ops = 2 * config.m * config.n**2 - 2*config.n**3 / 3
 
+    elif(config.function == 'dpotrf'):
+        
+        ops = config.n**3 / 3
+
+    elif(config.function == 'dgetrf'):
+        
+        ops = config.n**3 * 2 / 3
+
     else:
         
         print('unrecognized function')

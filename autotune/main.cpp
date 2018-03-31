@@ -32,6 +32,11 @@ int main(int argc, char **argv)
         run_iterations::run_dgemm_iterations(cmd_args);
     }
 
+    else if(cmd_args.function == "dgetrf")
+    {
+        run_iterations::run_dgetrf_iterations(cmd_args);
+    }
+
     else
     {
         printf("Unrecognized function. Exiting.");
